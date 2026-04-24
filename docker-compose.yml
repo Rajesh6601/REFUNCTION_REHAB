@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: refunction_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-refunction}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-rehab_secret}
+      POSTGRES_DB: ${DB_NAME:-refunction_rehab}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-refunction}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: refunction_server
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-refunction}:${DB_PASSWORD:-rehab_secret}@db:5432/${DB_NAME:-refunction_rehab}
+      PORT: 4000
+    ports:
+      - "4000:4000"
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: refunction_client
+    restart: always
+    depends_on:
+      - server
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
