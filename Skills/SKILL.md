@@ -21,7 +21,7 @@ A complete spec for building the full-stack website and patient management app f
 | **Experience** | 15+ Years |
 | **Phone** | 99009 11795 |
 | **WhatsApp** | 99009 11795 |
-| **Patient Enrollment Form (Google)** | https://docs.google.com/forms/d/e/1FAIpQLScb3KFvvk-iOGo6paLy33IFogSPKgdG9HkLe7AyIjmRVXdZPQ/viewform |
+| **Patient Enrollment** | Direct in-app multi-step form (Google Form removed) |
 
 ### Color Palette
 ```css
@@ -333,20 +333,20 @@ Back Pain & Neck Pain, Postural Correction, SI Joint Pain, Fracture Rehabilitati
 
 ### 4.2 Patient Enrollment Form (`/enroll`)
 
-Embed the Google Form OR build a custom inline form. The custom form mirrors the PDF exactly:
+Custom multi-step React form (Google Form removed). Goes directly to the registration form — no mode selection screen.
 
 **Section 1 — Personal Information**
-- Full Name*, Date of Birth*, Age*, Nationality, Occupation
-- Gender (Male / Female / Other / Prefer not to say)*
-- Blood Group (A+/A-/B+/B-/AB+/AB-/O+/O-)*
+- Full Name*, Age*, Gender*
+- Date of Birth (optional), Nationality (optional), Occupation (optional)
+- Blood Group (A+/A-/B+/B-/AB+/AB-/O+/O-)
 
 **Section 2 — Contact Information**
 - Mobile Number*, Alternate Mobile
 - Email Address, Pin Code
-- Home Address*, City*, State*
+- Home Address (optional), City (optional), State (optional)
 
-**Section 3 — Emergency Contact**
-- Emergency Contact Name*, Number*, Relationship*
+**Section 3 — Emergency Contact** (all optional)
+- Emergency Contact Name, Number, Relationship
 
 **Section 4 — Program Selection**
 - Type of Program* (checkboxes: Physiotherapy, General Health & Fitness, Kids Exercise, Post-Surgery Rehab, Sports Injury, Elderly Care, Other)
@@ -510,20 +510,20 @@ GET    /api/admin/payments/export   → CSV export of all payments
 model Patient {
   id                String    @id @default(cuid())
   fullName          String
-  dob               DateTime
+  dob               DateTime?
   age               Int
   gender            String
   bloodGroup        String?
   mobile            String    @unique
   alternateMobile   String?
   email             String?
-  address           String
-  city              String
-  state             String
+  address           String?
+  city              String?
+  state             String?
   pinCode           String?
-  emergencyName     String
-  emergencyPhone    String
-  emergencyRelation String
+  emergencyName     String?
+  emergencyPhone    String?
+  emergencyRelation String?
   program           String[]
   sessionType       String
   preferredDays     String[]
@@ -656,9 +656,7 @@ model ContactInquiry {
 
 ## 10. Key Implementation Notes
 
-- **Google Form Integration**: The `/enroll` page should offer two options:
-  1. **Quick Enroll** → embedded Google Form iframe (https://docs.google.com/forms/d/e/1FAIpQLScb3KFvvk-iOGo6paLy33IFogSPKgdG9HkLe7AyIjmRVXdZPQ/viewform)
-  2. **Full Registration** → custom React form with all fields from PDF, stored in DB
+- **Enrollment**: The `/enroll` page uses a custom multi-step React form (4 steps: Personal, Contact, Program, Goals). All data is stored directly in the PostgreSQL database. Google Form integration has been removed.
 
 - **Payment**: Integrate Razorpay for online payments. For cash/cheque, staff records manually via admin dashboard.
 

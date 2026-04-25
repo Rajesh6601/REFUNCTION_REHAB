@@ -14,27 +14,27 @@ router.post('/enroll', async (req, res) => {
       consentGiven,
     } = req.body
 
-    if (!fullName || !mobile || !gender || !address || !city || !state) {
+    if (!fullName || !mobile || !gender) {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
     const patient = await prisma.patient.create({
       data: {
         fullName,
-        dob:              new Date(dob),
+        dob:              dob ? new Date(dob) : null,
         age:              parseInt(age),
         gender,
         bloodGroup:       bloodGroup || null,
         mobile,
         alternateMobile:  alternateMobile || null,
         email:            email || null,
-        address,
-        city,
-        state,
+        address:          address || null,
+        city:             city || null,
+        state:            state || null,
         pinCode:          pinCode || null,
-        emergencyName,
-        emergencyPhone,
-        emergencyRelation,
+        emergencyName:    emergencyName || null,
+        emergencyPhone:   emergencyPhone || null,
+        emergencyRelation:emergencyRelation || null,
         program:          Array.isArray(programs) ? programs : [],
         sessionType:      sessionType || 'In-Person',
         preferredDays:    Array.isArray(preferredDays) ? preferredDays : [],

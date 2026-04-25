@@ -4,16 +4,14 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link } from 'react-router-dom'
-import { ExternalLink, CheckCircle, ChevronRight, ChevronLeft, User, Phone, ClipboardList, Target } from 'lucide-react'
+import { CheckCircle, ChevronRight, ChevronLeft, User, Phone, ClipboardList, Target } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
 import { enrollPatient } from '../lib/api'
-
-const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScb3KFvvk-iOGo6paLy33IFogSPKgdG9HkLe7AyIjmRVXdZPQ/viewform'
 
 // Schemas per step
 const step1Schema = z.object({
   fullName:    z.string().min(2, 'Full name is required'),
-  dob:         z.string().min(1, 'Date of birth is required'),
+  dob:         z.string().optional(),
   age:         z.string().min(1, 'Age is required'),
   gender:      z.enum(['Male', 'Female', 'Other', 'Prefer not to say'], { required_error: 'Please select gender' }),
   bloodGroup:  z.string().optional(),
@@ -23,13 +21,13 @@ const step1Schema = z.object({
 const step2Schema = z.object({
   mobile:    z.string().min(10, 'Mobile number is required'),
   email:     z.string().email('Enter a valid email').optional().or(z.literal('')),
-  address:   z.string().min(5, 'Address is required'),
-  city:      z.string().min(2, 'City is required'),
-  state:     z.string().min(2, 'State is required'),
+  address:   z.string().optional(),
+  city:      z.string().optional(),
+  state:     z.string().optional(),
   pinCode:   z.string().optional(),
-  emergencyName:     z.string().min(2, 'Emergency contact name is required'),
-  emergencyPhone:    z.string().min(10, 'Emergency contact number is required'),
-  emergencyRelation: z.string().min(2, 'Relationship is required'),
+  emergencyName:     z.string().optional(),
+  emergencyPhone:    z.string().optional(),
+  emergencyRelation: z.string().optional(),
 })
 const step3Schema = z.object({
   sessionType:   z.enum(['In-Person', 'Online', 'Home Visit'], { required_error: 'Please select session type' }),
@@ -68,7 +66,6 @@ function Select({ className = '', ...props }) {
 }
 
 export default function Enroll() {
-  const [mode, setMode]             = useState(null)
   const [step, setStep]             = useState(0)
   const [stepData, setStepData]     = useState({})
   const [programs, setPrograms]     = useState([])
@@ -117,96 +114,6 @@ export default function Enroll() {
     }
   }
 
-  if (!mode) {
-    return (
-      <PageWrapper>
-        <section className="py-20 bg-light min-h-screen">
-          <div className="max-w-4xl mx-auto px-4">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-12">
-              <span className="text-teal font-semibold text-sm uppercase tracking-widest">Join Us</span>
-              <h1 className="font-display font-bold text-4xl md:text-5xl text-navy mt-2 mb-4">
-                Patient Enrollment
-              </h1>
-              <p className="text-muted text-lg max-w-xl mx-auto">
-                Choose how you'd like to enroll with ReFunction Rehab.
-              </p>
-            </motion.div>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <motion.div
-                className="card p-8 text-center cursor-pointer border-2 border-transparent hover:border-teal transition-colors"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                onClick={() => setMode('quick')}
-              >
-                <div className="w-14 h-14 rounded-full bg-teal/10 flex items-center justify-center mx-auto mb-4">
-                  <ExternalLink size={24} className="text-teal" />
-                </div>
-                <h2 className="font-display font-bold text-xl text-navy mb-2">Quick Enroll</h2>
-                <p className="text-muted text-sm mb-6">
-                  Fill out our Google Form — quick, simple, and mobile-friendly.
-                </p>
-                <span className="btn-teal justify-center">Open Google Form</span>
-              </motion.div>
-              <motion.div
-                className="card p-8 text-center cursor-pointer border-2 border-transparent hover:border-orange transition-colors"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                onClick={() => setMode('full')}
-              >
-                <div className="w-14 h-14 rounded-full bg-orange/10 flex items-center justify-center mx-auto mb-4">
-                  <ClipboardList size={24} className="text-orange" />
-                </div>
-                <h2 className="font-display font-bold text-xl text-navy mb-2">Full Registration</h2>
-                <p className="text-muted text-sm mb-6">
-                  Complete patient profile with medical history, goals, and consent. All data stays private.
-                </p>
-                <span className="btn-primary justify-center">Start Registration</span>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-      </PageWrapper>
-    )
-  }
-
-  if (mode === 'quick') {
-    return (
-      <PageWrapper>
-        <section className="py-12 bg-light min-h-screen">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="flex items-center gap-3 mb-6">
-              <button onClick={() => setMode(null)} className="text-teal text-sm hover:underline flex items-center gap-1">
-                ← Back
-              </button>
-              <span className="text-muted text-sm">Quick Enrollment</span>
-            </div>
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-              <div className="bg-navy p-5 text-white">
-                <h2 className="font-display font-bold text-xl">Patient Enrollment Form</h2>
-                <p className="text-white/70 text-sm mt-1">ReFunction Rehab — Dr. Neha Trivedi</p>
-              </div>
-              <div className="p-4">
-                <iframe
-                  src={GOOGLE_FORM_URL}
-                  width="100%"
-                  height="700"
-                  frameBorder="0"
-                  marginHeight="0"
-                  marginWidth="0"
-                  title="Patient Enrollment Form"
-                  className="rounded-lg"
-                  style={{ minHeight: '700px' }}
-                >
-                  Loading form...
-                </iframe>
-              </div>
-            </div>
-          </div>
-        </section>
-      </PageWrapper>
-    )
-  }
-
-  // Full multi-step form
   if (submitted) {
     return (
       <PageWrapper>
@@ -251,11 +158,6 @@ export default function Enroll() {
     <PageWrapper>
       <section className="py-12 bg-light min-h-screen">
         <div className="max-w-2xl mx-auto px-4">
-          {/* Back */}
-          <button onClick={() => setMode(null)} className="text-teal text-sm hover:underline flex items-center gap-1 mb-6">
-            ← Back to options
-          </button>
-
           {/* Step indicators */}
           <div className="flex items-center justify-between mb-8">
             {STEPS.map((s, i) => {
@@ -300,7 +202,7 @@ export default function Enroll() {
                           <input {...register('fullName')} className={`input-field ${errors.fullName ? 'input-error' : ''}`} placeholder="Enter your full name" />
                         </Field>
                       </div>
-                      <Field label="Date of Birth" error={errors.dob?.message} required>
+                      <Field label="Date of Birth" error={errors.dob?.message}>
                         <input type="date" {...register('dob')} className={`input-field ${errors.dob ? 'input-error' : ''}`} />
                       </Field>
                       <Field label="Age" error={errors.age?.message} required>
@@ -341,14 +243,14 @@ export default function Enroll() {
                         <input type="email" {...register('email')} className={`input-field ${errors.email ? 'input-error' : ''}`} placeholder="email@example.com" />
                       </Field>
                       <div className="sm:col-span-2">
-                        <Field label="Home Address" error={errors.address?.message} required>
+                        <Field label="Home Address" error={errors.address?.message}>
                           <input {...register('address')} className={`input-field ${errors.address ? 'input-error' : ''}`} placeholder="Street, Area" />
                         </Field>
                       </div>
-                      <Field label="City" error={errors.city?.message} required>
+                      <Field label="City" error={errors.city?.message}>
                         <input {...register('city')} className={`input-field ${errors.city ? 'input-error' : ''}`} placeholder="City" />
                       </Field>
-                      <Field label="State" error={errors.state?.message} required>
+                      <Field label="State" error={errors.state?.message}>
                         <input {...register('state')} className={`input-field ${errors.state ? 'input-error' : ''}`} placeholder="State" defaultValue="Karnataka" />
                       </Field>
                       <Field label="Pin Code">
@@ -358,13 +260,13 @@ export default function Enroll() {
                     <div className="mt-6 pt-6 border-t border-gray-100">
                       <h3 className="font-semibold text-navy mb-4">Emergency Contact</h3>
                       <div className="grid sm:grid-cols-3 gap-5">
-                        <Field label="Name" error={errors.emergencyName?.message} required>
+                        <Field label="Name" error={errors.emergencyName?.message}>
                           <input {...register('emergencyName')} className={`input-field ${errors.emergencyName ? 'input-error' : ''}`} placeholder="Contact name" />
                         </Field>
-                        <Field label="Phone" error={errors.emergencyPhone?.message} required>
+                        <Field label="Phone" error={errors.emergencyPhone?.message}>
                           <input {...register('emergencyPhone')} className={`input-field ${errors.emergencyPhone ? 'input-error' : ''}`} placeholder="Mobile number" />
                         </Field>
-                        <Field label="Relationship" error={errors.emergencyRelation?.message} required>
+                        <Field label="Relationship" error={errors.emergencyRelation?.message}>
                           <input {...register('emergencyRelation')} className={`input-field ${errors.emergencyRelation ? 'input-error' : ''}`} placeholder="e.g. Spouse" />
                         </Field>
                       </div>

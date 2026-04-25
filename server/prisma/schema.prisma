@@ -10,20 +10,20 @@ datasource db {
 model Patient {
   id                String    @id @default(cuid())
   fullName          String
-  dob               DateTime
+  dob               DateTime?
   age               Int
   gender            String
   bloodGroup        String?
   mobile            String    @unique
   alternateMobile   String?
   email             String?
-  address           String
-  city              String
-  state             String
+  address           String?
+  city              String?
+  state             String?
   pinCode           String?
-  emergencyName     String
-  emergencyPhone    String
-  emergencyRelation String
+  emergencyName     String?
+  emergencyPhone    String?
+  emergencyRelation String?
   program           String[]
   sessionType       String
   preferredDays     String[]
