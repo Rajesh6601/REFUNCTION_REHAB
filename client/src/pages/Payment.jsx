@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Search, CreditCard, Smartphone, Building2, Wallet, FileText, CheckCircle, Plus, Trash2 } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
@@ -22,6 +22,7 @@ const PAYMENT_MODES = [
 
 export default function Payment() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [patient, setPatient]         = useState(null)
   const [searchQ, setSearchQ]         = useState('')
   const [searchError, setSearchError] = useState('')
@@ -31,6 +32,7 @@ export default function Payment() {
   const [savedPayment, setSavedPayment] = useState(null)
   const [saving, setSaving]           = useState(false)
   const [saveError, setSaveError]     = useState('')
+  const [amountPaid, setAmountPaid]   = useState(0)
   const [lineItems, setLineItems]     = useState([
     { service: 'Physiotherapy Session', qty: 1, rate: 800, discount: 0 },
   ])
@@ -84,6 +86,9 @@ export default function Payment() {
   const subtotal  = lineItems.reduce((sum, l) => sum + l.qty * l.rate - l.discount, 0)
   const gst       = 0
   const total     = subtotal + gst
+  const balanceDue = total - amountPaid
+
+  useEffect(() => { setAmountPaid(total) }, [total])
 
   if (receipt) {
     return (
@@ -231,7 +236,7 @@ export default function Payment() {
                 <thead>
                   <tr className="text-muted text-xs uppercase bg-light rounded-lg">
                     <th className="text-left p-3 rounded-l-lg">Service</th>
-                    <th className="p-3 text-center w-16">Qty</th>
+                    <th className="p-3 text-center w-20">Qty</th>
                     <th className="p-3 text-right w-24">Rate (₹)</th>
                     <th className="p-3 text-right w-24">Disc (₹)</th>
                     <th className="p-3 text-right w-24">Amount (₹)</th>
@@ -251,7 +256,7 @@ export default function Payment() {
                         </select>
                       </td>
                       <td className="py-2 px-2">
-                        <input type="number" min="1" className="input-field text-sm py-2 text-center" value={l.qty}
+                        <input type="number" min="1" className="input-field text-sm py-2 !px-2 text-center" value={l.qty}
                           onChange={(e) => updateLine(i, 'qty', e.target.value)} />
                       </td>
                       <td className="py-2 px-2">
@@ -365,9 +370,10 @@ export default function Payment() {
               <div><label className="form-label">Total Charged (₹)</label>
                 <input type="number" className="input-field" value={total} readOnly /></div>
               <div><label className="form-label">Amount Paid (₹)</label>
-                <input id="amountPaid" type="number" className="input-field" defaultValue={total} /></div>
+                <input type="number" className="input-field" value={amountPaid}
+                  onChange={(e) => setAmountPaid(Number(e.target.value) || 0)} /></div>
               <div><label className="form-label">Balance Due (₹)</label>
-                <input id="balanceDue" type="number" className="input-field" defaultValue={0} /></div>
+                <input type="number" className="input-field" value={balanceDue} readOnly /></div>
             </div>
             <div className="grid sm:grid-cols-2 gap-4 mb-6">
               <div>
@@ -407,8 +413,6 @@ export default function Payment() {
                   setSaving(true)
                   setSaveError('')
                   try {
-                    const amountPaid = parseFloat(document.getElementById('amountPaid')?.value) || total
-                    const balanceDue = parseFloat(document.getElementById('balanceDue')?.value) || 0
                     const status     = document.getElementById('payStatus')?.value || 'paid'
                     const collectedBy= document.getElementById('collectedBy')?.value || 'Staff'
                     const remarks    = document.getElementById('remarks')?.value || ''
@@ -425,6 +429,7 @@ export default function Payment() {
                       status, collectedBy, remarks,
                     })
                     setSavedPayment(res.data.payment)
+                    setTimeout(() => navigate('/admin/payments'), 2000)
                   } catch (err) {
                     setSaveError(err.response?.data?.error || 'Failed to save. Please try again.')
                   } finally {
