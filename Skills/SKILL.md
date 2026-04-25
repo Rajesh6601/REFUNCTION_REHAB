@@ -339,6 +339,7 @@ Custom multi-step React form (Google Form removed). Goes directly to the registr
 - Full Name*, Age*, Gender*
 - Date of Birth (optional), Nationality (optional), Occupation (optional)
 - Blood Group (A+/A-/B+/B-/AB+/AB-/O+/O-)
+- Enrollment Date (optional, defaults to today — allows backdating for paper registrations)
 
 **Section 2 — Contact Information**
 - Mobile Number*, Alternate Mobile
@@ -468,7 +469,7 @@ All routes that write data MUST persist to PostgreSQL via Prisma. No in-memory o
 POST   /api/patients/enroll         → Save to Patient table, return { patientId, message }, send confirmation email
 GET    /api/patients/:id            → Get patient by ID (with payment history)
 GET    /api/patients/search?q=      → Search by name / phone / patient ID
-PATCH  /api/patients/:id            → Update patient details
+PATCH  /api/patients/:id            → Update patient details (implemented, requires auth)
 
 # Payments
 POST   /api/payments                → Save to Payment table, return { paymentId, receiptNo }
@@ -508,7 +509,7 @@ GET    /api/admin/payments/export   → CSV export of all payments
 
 ```prisma
 model Patient {
-  id                String    @id @default(cuid())
+  id                String    @id              // Sequential RF-XXXX format (e.g. RF-0001, RF-0002) generated via patient_serial_seq
   fullName          String
   dob               DateTime?
   age               Int
@@ -797,7 +798,7 @@ When building this app from scratch, follow this order:
 - Filter: Program type, Enrollment date range
 - Paginated table: ID | Name | Age | Gender | Mobile | Program | Session Type | Enrolled At | Payment Status | Actions
 - **Payment Status column**: Show a badge per patient — green "X paid" if they have payment records, amber "No payment" if they have zero payment records. This gives staff immediate visibility into who has enrolled but not yet paid.
-- Actions: View full profile, Edit, Download enrollment card, **Record Payment** (links to `/payment?patientId={id}` for quick deferred payment recording)
+- Actions: **Edit** (links to `/admin/patients/:id/edit` — implemented), View full profile, Download enrollment card, **Record Payment** (links to `/payment?patientId={id}` for quick deferred payment recording)
 - **Export to CSV** button (calls `GET /api/admin/patients/export`)
 - Total count shown: "Showing X of Y patients"
 

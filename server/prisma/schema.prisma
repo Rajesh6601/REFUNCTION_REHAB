@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Patient {
-  id                String    @id @default(cuid())
+  id                String    @id
   fullName          String
   dob               DateTime?
   age               Int

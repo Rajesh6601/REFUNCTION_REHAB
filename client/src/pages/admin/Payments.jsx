@@ -48,6 +48,20 @@ export default function AdminPayments() {
   useEffect(() => { fetchPayments() }, [fetchPayments])
   useEffect(() => { setPage(1) }, [status, mode, from, to])
 
+  const handleExport = async () => {
+    try {
+      const res = await exportPayments()
+      const url = URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'payments.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      // handled by axios interceptor
+    }
+  }
+
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -55,14 +69,12 @@ export default function AdminPayments() {
           <h1 className="font-display font-bold text-2xl text-navy">Payments</h1>
           <p className="text-muted text-sm mt-0.5">{data.total} total records</p>
         </div>
-        <a
-          href={exportPayments()}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={handleExport}
           className="btn-teal text-sm py-2.5 px-4"
         >
           <Download size={15} /> Export CSV
-        </a>
+        </button>
       </div>
 
       {/* Revenue Summary */}

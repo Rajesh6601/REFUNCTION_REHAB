@@ -17,6 +17,7 @@ const step1Schema = z.object({
   bloodGroup:  z.string().optional(),
   nationality: z.string().optional(),
   occupation:  z.string().optional(),
+  enrolledAt:  z.string().optional(),
 })
 const step2Schema = z.object({
   mobile:    z.string().min(10, 'Mobile number is required'),
@@ -226,6 +227,9 @@ export default function Enroll() {
                       </Field>
                       <Field label="Nationality">
                         <input {...register('nationality')} className="input-field" placeholder="e.g. Indian" />
+                      </Field>
+                      <Field label="Enrollment Date">
+                        <input type="date" {...register('enrolledAt')} className="input-field" defaultValue={new Date().toISOString().split('T')[0]} />
                       </Field>
                     </div>
                   </div>

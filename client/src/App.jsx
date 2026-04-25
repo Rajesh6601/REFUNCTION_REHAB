@@ -21,6 +21,7 @@ import AdminSetup    from './pages/admin/Setup'
 import Dashboard     from './pages/admin/Dashboard'
 import AdminPatients from './pages/admin/Patients'
 import AdminPayments from './pages/admin/Payments'
+import EditPatient   from './pages/admin/EditPatient'
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('rfr_token')
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/admin/setup"     element={<AdminSetup />} />
         <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/admin/patients"  element={<ProtectedRoute><AdminPatients /></ProtectedRoute>} />
+        <Route path="/admin/patients/:id/edit" element={<ProtectedRoute><EditPatient /></ProtectedRoute>} />
         <Route path="/admin/payments"  element={<ProtectedRoute><AdminPayments /></ProtectedRoute>} />
         <Route path="/admin"           element={<Navigate to="/admin/dashboard" replace />} />
 

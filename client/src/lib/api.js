@@ -36,6 +36,7 @@ api.interceptors.response.use(
 export const enrollPatient   = (data)   => api.post('/patients/enroll', data)
 export const getPatient      = (id)     => api.get(`/patients/${id}`)
 export const searchPatients  = (q)      => api.get('/patients/search', { params: { q } })
+export const updatePatient   = (id, data) => api.patch(`/patients/${id}`, data)
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
 export const recordPayment   = (data)   => api.post('/payments', data)
@@ -53,7 +54,7 @@ export const setupAdmin      = (data)   => api.post('/auth/setup', data)
 export const getDashboard    = ()       => api.get('/admin/dashboard')
 export const getAdminPatients= (params) => api.get('/admin/patients', { params })
 export const getAdminPayments= (params) => api.get('/admin/payments',  { params })
-export const exportPatients  = ()       => `${api.defaults.baseURL}/admin/patients/export`
-export const exportPayments  = ()       => `${api.defaults.baseURL}/admin/payments/export`
+export const exportPatients  = ()       => api.get('/admin/patients/export', { responseType: 'blob' })
+export const exportPayments  = ()       => api.get('/admin/payments/export',  { responseType: 'blob' })
 
 export default api

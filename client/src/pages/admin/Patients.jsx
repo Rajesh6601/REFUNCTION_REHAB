@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Download, ChevronLeft, ChevronRight, CreditCard } from 'lucide-react'
+import { Search, Download, ChevronLeft, ChevronRight, CreditCard, Pencil } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getAdminPatients, exportPatients } from '../../lib/api'
 
@@ -39,6 +39,20 @@ export default function AdminPatients() {
   // Reset to page 1 when filters change
   useEffect(() => { setPage(1) }, [search, program, from, to])
 
+  const handleExport = async () => {
+    try {
+      const res = await exportPatients()
+      const url = URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'patients.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      // handled by axios interceptor
+    }
+  }
+
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -46,14 +60,12 @@ export default function AdminPatients() {
           <h1 className="font-display font-bold text-2xl text-navy">Patients</h1>
           <p className="text-muted text-sm mt-0.5">{data.total} total enrolled</p>
         </div>
-        <a
-          href={exportPatients()}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={handleExport}
           className="btn-teal text-sm py-2.5 px-4"
         >
           <Download size={15} /> Export CSV
-        </a>
+        </button>
       </div>
 
       {/* Filters */}
@@ -97,7 +109,7 @@ export default function AdminPatients() {
                 <tr><td colSpan={10} className="text-center py-16 text-muted">No patients found</td></tr>
               ) : data.patients.map((p) => (
                 <tr key={p.id} className="border-b border-gray-50 hover:bg-light transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs text-muted">{p.id.slice(0, 8)}…</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted">{p.id}</td>
                   <td className="px-4 py-3 font-medium text-navy whitespace-nowrap">{p.fullName}</td>
                   <td className="px-4 py-3 text-muted whitespace-nowrap">{p.age} / {p.gender}</td>
                   <td className="px-4 py-3 text-muted">{p.mobile}</td>
@@ -125,12 +137,20 @@ export default function AdminPatients() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      to={`/payment?patientId=${p.id}`}
-                      className="inline-flex items-center gap-1 text-xs text-teal hover:underline font-medium whitespace-nowrap"
-                    >
-                      <CreditCard size={13} /> Record Payment
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        to={`/admin/patients/${p.id}/edit`}
+                        className="inline-flex items-center gap-1 text-xs text-navy hover:underline font-medium whitespace-nowrap"
+                      >
+                        <Pencil size={13} /> Edit
+                      </Link>
+                      <Link
+                        to={`/payment?patientId=${p.id}`}
+                        className="inline-flex items-center gap-1 text-xs text-teal hover:underline font-medium whitespace-nowrap"
+                      >
+                        <CreditCard size={13} /> Record Payment
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
