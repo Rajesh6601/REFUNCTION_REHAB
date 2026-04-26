@@ -33,6 +33,7 @@ export default function Payment() {
   const [saving, setSaving]           = useState(false)
   const [saveError, setSaveError]     = useState('')
   const [amountPaid, setAmountPaid]   = useState(0)
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
   const [lineItems, setLineItems]     = useState([
     { service: 'Physiotherapy Session', qty: 1, rate: 800, discount: 0 },
   ])
@@ -114,7 +115,7 @@ export default function Payment() {
               <div className="p-6 space-y-4 text-sm">
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100">
                   <div><span className="text-muted">Receipt No.</span><div className="font-semibold text-navy">RFR-{Date.now().toString().slice(-6)}</div></div>
-                  <div><span className="text-muted">Date</span><div className="font-semibold text-navy">{new Date().toLocaleDateString('en-IN')}</div></div>
+                  <div><span className="text-muted">Date</span><div className="font-semibold text-navy">{new Date(paymentDate).toLocaleDateString('en-IN')}</div></div>
                   <div><span className="text-muted">Patient</span><div className="font-semibold text-navy">{patient?.name || '—'}</div></div>
                   <div><span className="text-muted">Doctor</span><div className="font-semibold text-navy">Dr. Neha Trivedi</div></div>
                   <div><span className="text-muted">Session No.</span><div className="font-semibold text-navy">{patient?.sessionNo || 1}</div></div>
@@ -375,7 +376,12 @@ export default function Payment() {
               <div><label className="form-label">Balance Due (₹)</label>
                 <input type="number" className="input-field" value={balanceDue} readOnly /></div>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4 mb-6">
+            <div className="grid sm:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="form-label">Payment Date</label>
+                <input type="date" className="input-field" value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)} />
+              </div>
               <div>
                 <label className="form-label">Payment Status</label>
                 <select id="payStatus" className="input-field">
@@ -426,7 +432,7 @@ export default function Payment() {
                       })),
                       subTotal: subtotal, gst, totalAmount: total,
                       amountPaid, balanceDue, paymentMode: payMode,
-                      status, collectedBy, remarks,
+                      paymentDate, status, collectedBy, remarks,
                     })
                     setSavedPayment(res.data.payment)
                     setTimeout(() => navigate('/admin/payments'), 2000)

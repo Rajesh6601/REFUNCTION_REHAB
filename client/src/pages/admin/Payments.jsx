@@ -113,7 +113,7 @@ export default function AdminPayments() {
           <table className="w-full text-sm">
             <thead className="bg-light border-b border-gray-100">
               <tr>
-                {['Receipt No', 'Patient', 'Amount Paid', 'Total', 'Balance', 'Mode', 'Status', 'Date'].map((h) => (
+                {['Receipt No', 'Patient', 'Amount Paid', 'Total', 'Balance', 'Mode', 'Status', 'Payment Date'].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
@@ -142,7 +142,7 @@ export default function AdminPayments() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-muted whitespace-nowrap">
-                    {new Date(p.createdAt).toLocaleDateString('en-IN')}
+                    {new Date(p.paymentDate).toLocaleDateString('en-IN')}
                   </td>
                 </tr>
               ))}

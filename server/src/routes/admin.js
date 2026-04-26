@@ -179,7 +179,7 @@ router.get('/payments', async (req, res) => {
       ...(status && { status }),
       ...(mode   && { paymentMode: mode }),
       ...(from || to ? {
-        createdAt: {
+        paymentDate: {
           ...(from && { gte: from }),
           ...(to   && { lte: to   }),
         },
@@ -189,7 +189,7 @@ router.get('/payments', async (req, res) => {
     const [payments, total, summary] = await Promise.all([
       prisma.payment.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { paymentDate: 'desc' },
         skip:  (page - 1) * limit,
         take:  limit,
         include: { patient: { select: { fullName: true, mobile: true } } },
@@ -220,15 +220,15 @@ router.get('/payments', async (req, res) => {
 router.get('/payments/export', async (req, res) => {
   try {
     const payments = await prisma.payment.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { paymentDate: 'desc' },
       include: { patient: { select: { fullName: true, mobile: true } } },
     })
 
-    const header = 'Receipt No,Patient,Mobile,Total Amount,Amount Paid,Balance Due,Payment Mode,Status,Date\n'
+    const header = 'Receipt No,Patient,Mobile,Total Amount,Amount Paid,Balance Due,Payment Mode,Status,Payment Date\n'
     const rows   = payments.map(p =>
       [p.receiptNo, `"${p.patient.fullName}"`, p.patient.mobile,
        p.totalAmount, p.amountPaid, p.balanceDue, p.paymentMode,
-       p.status, p.createdAt.toISOString()].join(',')
+       p.status, p.paymentDate.toISOString()].join(',')
     ).join('\n')
 
     res.setHeader('Content-Type', 'text/csv')

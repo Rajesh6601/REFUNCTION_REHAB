@@ -15,7 +15,7 @@ router.post('/', async (req, res) => {
     const {
       patientId, sessionNo, sessionDate, sessionDuration,
       services, subTotal, gst, totalAmount, amountPaid,
-      balanceDue, advancePaid, paymentMode, transactionId,
+      balanceDue, advancePaid, paymentMode, paymentDate, transactionId,
       paymentDetails, status, remarks, collectedBy, authorisedBy,
     } = req.body
 
@@ -41,6 +41,7 @@ router.post('/', async (req, res) => {
         balanceDue:      parseFloat(balanceDue) || 0,
         advancePaid:     parseFloat(advancePaid) || 0,
         paymentMode,
+        paymentDate:     paymentDate ? new Date(paymentDate) : new Date(),
         transactionId:   transactionId || null,
         paymentDetails:  paymentDetails || null,
         status:          status || 'paid',

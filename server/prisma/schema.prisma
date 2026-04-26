@@ -66,6 +66,7 @@ model Payment {
   balanceDue       Float    @default(0)
   advancePaid      Float    @default(0)
   paymentMode      String
+  paymentDate      DateTime @default(now())
   transactionId    String?
   paymentDetails   Json?
   status           String   @default("paid")
