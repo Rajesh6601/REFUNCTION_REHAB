@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { Phone, MessageCircle, MapPin, Clock, Send, CheckCircle } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
 import { sendContact } from '../lib/api'
+import { images } from '../lib/images'
+import OptimizedImage from '../components/ui/OptimizedImage'
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false)
@@ -103,14 +105,14 @@ export default function Contact() {
                 })}
               </div>
 
-              {/* Map placeholder */}
-              <div className="rounded-2xl overflow-hidden border border-gray-200 h-48 bg-gray-100 flex items-center justify-center">
-                <div className="text-center text-muted">
-                  <MapPin size={32} className="mx-auto mb-2 text-teal" />
-                  <p className="text-sm font-medium">Bengaluru, Karnataka</p>
-                  <p className="text-xs mt-1">Map available after booking confirmation</p>
-                </div>
-              </div>
+              {/* Clinic image */}
+              <OptimizedImage
+                src={images.clinic}
+                alt="ReFunction Rehab clinic, Bengaluru"
+                aspectRatio="16/9"
+                animation="fadeUp"
+                delay={0.2}
+              />
             </motion.div>
 
             {/* Form */}

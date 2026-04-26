@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Phone } from 'lucide-react'
+import { images } from '../../lib/images'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 30 },
@@ -21,15 +22,15 @@ export default function Hero() {
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-10"
         style={{ background: 'radial-gradient(circle, #E8630A, transparent)', transform: 'translate(-30%, 30%)' }} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-32 lg:py-24 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-32 lg:py-28 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Text */}
           <div>
             <motion.div {...fadeUp(0.1)}
-              className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-semibold px-4 py-2 rounded-full mb-6 backdrop-blur"
+              className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-semibold px-4 py-2 rounded-full mb-6 backdrop-blur whitespace-nowrap overflow-visible"
             >
-              <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-              Bengaluru's Trusted Physiotherapy Center
+              <span className="w-2 h-2 rounded-full bg-gold animate-pulse flex-shrink-0" />
+              Bengaluru&apos;s Trusted Physiotherapy Center
             </motion.div>
 
             <motion.h1 {...fadeUp(0.2)}
@@ -85,41 +86,47 @@ export default function Hero() {
             className="hidden lg:block"
           >
             <div className="relative">
-              {/* Main card */}
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl p-8 text-white">
-                <div className="text-center mb-6">
-                  <div className="w-20 h-20 mx-auto rounded-full bg-teal/30 border-2 border-teal flex items-center justify-center mb-4">
-                    <svg width="40" height="40" viewBox="0 0 36 36" fill="none">
-                      <circle cx="22" cy="6" r="4" fill="#1A7F8E"/>
-                      <path d="M14 14c2-3 5-5 8-4l4 2-3 6-4-2-5 8 6 4-2 4-8-5 4-13z" fill="white"/>
-                      <path d="M10 18l-4 10h4l3-7 3 3 2-4-4-4-4 2z" fill="#1A7F8E"/>
-                    </svg>
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl overflow-hidden text-white">
+                {/* Photo */}
+                <div className="flex justify-center pt-6 pb-4">
+                  <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-teal/40 shadow-lg">
+                    <img
+                      src={images.hero}
+                      alt="Dr. Neha Trivedi — ReFunction Rehab"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
+                </div>
+                {/* Info */}
+                <div className="text-center px-6 pb-2">
                   <h3 className="font-display font-bold text-xl">Dr. Neha Trivedi</h3>
                   <p className="text-white/70 text-sm mt-1">PT, MPT — Musculoskeletal & Sports Injury Specialist</p>
                 </div>
-                <div className="space-y-3">
-                  {[
-                    'Musculoskeletal & Sports Injuries',
-                    'Prenatal & Postnatal Pilates',
-                    'Senior Physiotherapy',
-                    "Women's Health & Pelvic Floor",
-                    'Post-Surgery Rehabilitation',
-                  ].map((item) => (
-                    <div key={item} className="flex items-center gap-3 text-sm text-white/80">
-                      <div className="w-5 h-5 rounded-full bg-teal/30 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3">
-                          <path d="M1 5l3 3 7-7" stroke="#1A7F8E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                {/* Specializations */}
+                <div className="px-6 pb-6 pt-4">
+                  <div className="space-y-2.5">
+                    {[
+                      'Musculoskeletal & Sports Injuries',
+                      'Prenatal & Postnatal Pilates',
+                      'Senior Physiotherapy',
+                      "Women's Health & Pelvic Floor",
+                      'Post-Surgery Rehabilitation',
+                    ].map((item) => (
+                      <div key={item} className="flex items-center gap-3 text-sm text-white/80">
+                        <div className="w-5 h-5 rounded-full bg-teal/30 flex items-center justify-center flex-shrink-0">
+                          <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3">
+                            <path d="M1 5l3 3 7-7" stroke="#1A7F8E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        {item}
                       </div>
-                      {item}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Floating badge */}
-              <div className="absolute -top-4 -right-4 bg-orange text-white rounded-2xl px-4 py-3 shadow-xl">
+              <div className="absolute -top-4 -right-4 bg-orange text-white rounded-2xl px-4 py-3 shadow-xl z-10">
                 <div className="font-accent font-bold text-2xl">15+</div>
                 <div className="text-xs text-white/90">Years Exp.</div>
               </div>

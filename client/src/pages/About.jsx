@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { Award, BookOpen, Heart, Users, ArrowRight } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
 import CTABanner from '../components/home/CTABanner'
+import { images } from '../lib/images'
+import OptimizedImage from '../components/ui/OptimizedImage'
 
 const milestones = [
   { year: '2009', title: 'Completed MPT', desc: 'Master of Physiotherapy with specialization in musculoskeletal conditions' },
@@ -62,12 +64,12 @@ export default function About() {
               transition={{ duration: 0.7, delay: 0.2 }}
             >
               <div className="bg-navy rounded-3xl p-8 text-white">
-                <div className="w-24 h-24 rounded-full bg-teal/20 border-4 border-teal/40 flex items-center justify-center mx-auto mb-6">
-                  <svg width="48" height="48" viewBox="0 0 36 36" fill="none">
-                    <circle cx="22" cy="6" r="4" fill="#1A7F8E"/>
-                    <path d="M14 14c2-3 5-5 8-4l4 2-3 6-4-2-5 8 6 4-2 4-8-5 4-13z" fill="white"/>
-                    <path d="M10 18l-4 10h4l3-7 3 3 2-4-4-4-4 2z" fill="#1A7F8E"/>
-                  </svg>
+                <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-teal/40 mx-auto mb-6">
+                  <img
+                    src={images.womensHealth}
+                    alt="Dr. Neha Trivedi with patient"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <h2 className="font-display font-bold text-2xl text-center text-white mb-1">Dr. Neha Trivedi</h2>
                 <p className="text-white/60 text-center text-sm mb-6">PT, MPT — Musculoskeletal & Sports Injury Specialist</p>
@@ -149,6 +151,33 @@ export default function About() {
                 </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Facility */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="section-heading text-3xl md:text-4xl text-navy mb-3">Our Facility</h2>
+            <p className="text-muted max-w-xl mx-auto">A modern, well-equipped clinic designed for your comfort and recovery.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <OptimizedImage
+              src={images.clinic}
+              alt="ReFunction Rehab clinic interior and exercise area"
+              aspectRatio="16/9"
+              className="shadow-lg"
+              animation="fadeLeft"
+            />
+            <OptimizedImage
+              src={images.painManagement}
+              alt="Specialized therapy and rehabilitation equipment"
+              aspectRatio="16/9"
+              className="shadow-lg"
+              animation="fadeRight"
+              delay={0.15}
+            />
           </div>
         </div>
       </section>

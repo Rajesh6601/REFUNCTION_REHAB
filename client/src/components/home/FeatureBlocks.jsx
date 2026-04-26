@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, ArrowRight, Clock } from 'lucide-react'
+import { images } from '../../lib/images'
+import OptimizedImage from '../ui/OptimizedImage'
 
 function SectionLabel({ children }) {
   return (
@@ -38,6 +40,14 @@ export default function FeatureBlocks() {
               transition={{ duration: 0.7 }}
               className="order-2 lg:order-1"
             >
+              <OptimizedImage
+                src={images.seniors}
+                alt="Senior physiotherapy exercise session"
+                aspectRatio="auto"
+                className="mb-6 shadow-lg bg-white"
+                animation="fadeLeft"
+                objectFit="contain"
+              />
               <div className="bg-navy rounded-3xl p-8 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
                   style={{ background: 'radial-gradient(circle, #1A7F8E, transparent)', transform: 'translate(30%, -30%)' }} />
@@ -162,6 +172,13 @@ export default function FeatureBlocks() {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
+              <OptimizedImage
+                src={images.womensHealth}
+                alt="Postnatal recovery and core activation exercise"
+                aspectRatio="16/9"
+                className="mb-6 shadow-lg"
+                animation="fadeRight"
+              />
               <div className="rounded-3xl overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #1B2F5E, #1A7F8E)' }}
               >
@@ -199,6 +216,13 @@ export default function FeatureBlocks() {
               transition={{ duration: 0.7 }}
               className="order-2 lg:order-1"
             >
+              <OptimizedImage
+                src={images.painManagement}
+                alt="Specialized neck and shoulder pain therapy"
+                aspectRatio="16/9"
+                className="mb-6 shadow-lg"
+                animation="fadeLeft"
+              />
               <div className="bg-light rounded-3xl p-8">
                 <div className="text-teal text-sm font-semibold uppercase tracking-wider mb-5">Results We Deliver</div>
                 <div className="space-y-4">

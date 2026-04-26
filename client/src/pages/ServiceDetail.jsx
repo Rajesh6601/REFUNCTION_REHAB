@@ -3,12 +3,15 @@ import { motion } from 'framer-motion'
 import { CheckCircle, ArrowRight, Clock, Phone } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
 import CTABanner from '../components/home/CTABanner'
+import { images } from '../lib/images'
+import OptimizedImage from '../components/ui/OptimizedImage'
 
 const serviceData = {
   seniors: {
     title: 'Physiotherapy for Seniors',
     tagline: 'Better Movement. Better Health. Better Life.',
     color: '#1B2F5E',
+    image: images.seniors,
     hero: 'Specialized Care for Pain Relief, Mobility & Better Independence',
     desc: `As we age, our bodies need extra care. Our senior physiotherapy programs are designed to be safe, supervised, and deeply personalized.
     Dr. Neha Trivedi works closely with each patient, monitoring medical conditions and progressively advancing the exercise program at a comfortable pace.`,
@@ -25,6 +28,7 @@ const serviceData = {
     title: "Women's Health & Postnatal",
     tagline: 'Heal. Strengthen. Feel Confident Again.',
     color: '#BE185D',
+    image: images.womensHealth,
     hero: 'Specialized Care from Pregnancy Through Postnatal Recovery',
     desc: `Dr. Neha Trivedi is trained in prenatal and postnatal Pilates — a specialty that allows her to safely guide women through pregnancy and recovery.
     Our approach starts with a thorough assessment of the core and pelvic floor before prescribing any exercise.`,
@@ -42,6 +46,7 @@ const serviceData = {
     title: 'Back, Neck & Shoulder Pain',
     tagline: 'Stop Just Relieving the Pain — Treat the Cause.',
     color: '#1A7F8E',
+    image: images.painManagement,
     hero: 'Specialized Assessment & Supervised Exercise for Lasting Relief',
     desc: `Regular exercises not working? Most people get a generic set of exercises. We take a completely different approach:
     a thorough specialized assessment followed by a program designed specifically for your body, your pain, and your goals.`,
@@ -58,6 +63,7 @@ const serviceData = {
     title: 'Sports Injury & Post-Surgery Rehab',
     tagline: 'Back to the Game, Stronger Than Before.',
     color: '#E8630A',
+    image: images.clinic,
     hero: 'Evidence-Based Rehab for Athletes & Post-Operative Patients',
     desc: `Whether you're an athlete sidelined by injury or recovering from surgery, our evidence-based rehab programs get you back to full function safely.
     We use sport-specific protocols and work closely with your surgeon when applicable.`,
@@ -74,6 +80,7 @@ const serviceData = {
     title: 'Kids Exercise Program',
     tagline: 'Fun, Safe & Developmentally Appropriate.',
     color: '#059669',
+    image: images.kids,
     hero: 'Building Strong, Healthy Bodies from the Ground Up',
     desc: `Our kids program uses age-appropriate, fun-based exercises supervised by qualified physiotherapists.
     We focus on building proper movement patterns, correcting posture early, and developing physical confidence.`,
@@ -96,8 +103,12 @@ export default function ServiceDetail() {
   return (
     <PageWrapper>
       {/* Hero */}
-      <section className="py-16 text-white" style={{ background: `linear-gradient(135deg, #1B2F5E, ${svc.color})` }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+      <section className="relative py-16 text-white overflow-hidden" style={{ background: `linear-gradient(135deg, #1B2F5E, ${svc.color})` }}>
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-20"
+          style={{ backgroundImage: `url(${svc.image})` }}
+        />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <Link to="/services" className="text-white/60 hover:text-white text-sm mb-4 inline-flex items-center gap-1">
               ← All Services
@@ -121,6 +132,13 @@ export default function ServiceDetail() {
             {/* Left */}
             <div>
               <p className="text-orange font-semibold text-lg mb-4">{svc.tagline}</p>
+              <OptimizedImage
+                src={svc.image}
+                alt={svc.title}
+                aspectRatio="16/9"
+                className="mb-6 shadow-lg"
+                animation="fadeUp"
+              />
               {svc.desc.split('\n').map((p, i) => (
                 <p key={i} className="text-muted leading-relaxed mb-4">{p.trim()}</p>
               ))}

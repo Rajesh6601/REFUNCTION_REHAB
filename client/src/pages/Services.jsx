@@ -3,12 +3,14 @@ import { motion } from 'framer-motion'
 import { Users, HeartHandshake, Bone, Dumbbell, Baby, Activity, ArrowRight } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
 import CTABanner from '../components/home/CTABanner'
+import { images } from '../lib/images'
 
 const services = [
   {
     slug: 'seniors',
     icon: Users,
     color: '#1B2F5E', bg: '#EEF2FF',
+    image: images.seniors,
     title: 'Physiotherapy for Seniors',
     tagline: 'Better Movement. Better Health. Better Life.',
     desc: 'Safe, supervised physiotherapy programs for older adults focusing on pain relief, mobility, strength, and independence. Medical conditions are regularly monitored throughout care.',
@@ -18,6 +20,7 @@ const services = [
     slug: 'womens-health',
     icon: HeartHandshake,
     color: '#BE185D', bg: '#FDF2F8',
+    image: images.womensHealth,
     title: "Women's Health & Postnatal",
     tagline: 'Heal. Strengthen. Feel Confident Again.',
     desc: 'Specialized postnatal and prenatal care by Dr. Neha Trivedi — trained in Pilates. We begin with a thorough core and pelvic floor assessment before prescribing any exercise.',
@@ -27,6 +30,7 @@ const services = [
     slug: 'pain-management',
     icon: Bone,
     color: '#1A7F8E', bg: '#F0FDFA',
+    image: images.painManagement,
     title: 'Back, Neck & Shoulder Pain',
     tagline: 'Stop Relieving Pain — Treat the Cause.',
     desc: 'Specialized assessment followed by a supervised, personalized exercise program. We identify and target the root cause — not just the symptoms.',
@@ -36,6 +40,7 @@ const services = [
     slug: 'sports-rehab',
     icon: Dumbbell,
     color: '#E8630A', bg: '#FFF7ED',
+    image: images.clinic,
     title: 'Sports Injury & Post-Surgery Rehab',
     tagline: 'Back to the Game, Stronger Than Before.',
     desc: 'Evidence-based progressive rehabilitation with sport-specific return-to-play protocols. Post-surgery care including TKR, ACL, hip and shoulder reconstruction.',
@@ -45,6 +50,7 @@ const services = [
     slug: 'kids',
     icon: Baby,
     color: '#059669', bg: '#ECFDF5',
+    image: images.kids,
     title: 'Kids Exercise Program',
     tagline: 'Fun, Safe & Developmentally Appropriate.',
     desc: 'Age-appropriate supervised exercise programs to support healthy physical development, posture, coordination, and overall fitness for children.',
@@ -54,6 +60,7 @@ const services = [
     slug: 'sports-rehab',
     icon: Activity,
     color: '#7C3AED', bg: '#F5F3FF',
+    image: images.postSurgery,
     title: 'Post-Surgery Rehabilitation',
     tagline: 'Structured Recovery, Optimal Outcomes.',
     desc: 'Comprehensive post-operative rehabilitation programs helping patients regain full function after orthopedic and neurological surgeries.',
@@ -91,7 +98,16 @@ export default function Services() {
                   viewport={{ once: true }}
                   transition={{ delay: (i % 3) * 0.1 }}
                 >
-                  <div className="card p-6 h-full flex flex-col gap-5">
+                  <div className="card h-full flex flex-col overflow-hidden">
+                    <div className="h-48 overflow-hidden">
+                      <img
+                        src={svc.image}
+                        alt={svc.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="p-6 flex flex-col gap-5 flex-1">
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center"
                       style={{ background: svc.bg }}
@@ -117,6 +133,7 @@ export default function Services() {
                     >
                       Learn More <ArrowRight size={15} />
                     </Link>
+                    </div>
                   </div>
                 </motion.div>
               )
