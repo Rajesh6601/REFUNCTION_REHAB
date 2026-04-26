@@ -41,7 +41,7 @@ export default function CTABanner() {
             </Link>
           </div>
           <p className="text-white/50 text-sm mt-8">
-            Mon–Sat: 6AM – 9PM &nbsp;•&nbsp; Bengaluru, Karnataka
+            Mon–Sun: 9AM – 9PM &nbsp;•&nbsp; Bengaluru, Karnataka
           </p>
         </motion.div>
       </div>

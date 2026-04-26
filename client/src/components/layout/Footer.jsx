@@ -119,7 +119,7 @@ export default function Footer() {
             </li>
             <li className="flex items-start gap-3 text-white/70 text-sm">
               <Clock size={16} className="mt-0.5 text-teal flex-shrink-0" />
-              <span>Mon–Sat: 6AM – 9PM<br/>Sun: Closed</span>
+              <span>Mon–Sun: 9AM – 9PM</span>
             </li>
           </ul>
           <div className="mt-5 inline-flex items-center gap-1.5 bg-teal/20 border border-teal/40 text-teal text-xs font-semibold px-3 py-1.5 rounded-full">

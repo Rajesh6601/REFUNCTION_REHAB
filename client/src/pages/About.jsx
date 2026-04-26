@@ -41,7 +41,7 @@ export default function About() {
               </p>
               <p className="text-muted leading-relaxed mb-6">
                 Specializing in sports injury rehabilitation, women's health, and senior physiotherapy,
-                Dr. Trivedi combines evidence-based protocols with a deeply empathetic, patient-first approach.
+                Dr. Neha combines evidence-based protocols with a deeply empathetic, patient-first approach.
                 She is also trained in prenatal and postnatal Pilates — a rare and highly sought-after expertise.
               </p>
               <div className="flex flex-wrap gap-3 mb-8">

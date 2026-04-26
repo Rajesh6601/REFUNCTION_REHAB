@@ -67,7 +67,7 @@ export default function Contact() {
                 {[
                   {
                     icon: Phone, label: 'Phone', href: 'tel:+919900911795',
-                    value: '99009 11795', sub: 'Call us Mon–Sat, 6AM–9PM'
+                    value: '99009 11795', sub: 'Call us Mon–Sun, 9AM–9PM'
                   },
                   {
                     icon: MessageCircle, label: 'WhatsApp', href: wa,
@@ -79,7 +79,7 @@ export default function Contact() {
                   },
                   {
                     icon: Clock, label: 'Hours', href: null,
-                    value: 'Mon–Sat: 6AM – 9PM', sub: 'Sunday: Closed'
+                    value: 'Mon–Sun: 9AM – 9PM', sub: 'Open all days'
                   },
                 ].map((item) => {
                   const Icon = item.icon
