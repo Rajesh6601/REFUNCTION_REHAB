@@ -14,6 +14,7 @@ import ServiceDetail from './pages/ServiceDetail'
 import Enroll        from './pages/Enroll'
 import Contact       from './pages/Contact'
 import Payment       from './pages/Payment'
+import Testimonials  from './pages/Testimonials'
 
 // Admin pages (no shared Navbar/Footer)
 import AdminLogin    from './pages/admin/Login'
@@ -21,7 +22,8 @@ import AdminSetup    from './pages/admin/Setup'
 import Dashboard     from './pages/admin/Dashboard'
 import AdminPatients from './pages/admin/Patients'
 import AdminPayments from './pages/admin/Payments'
-import EditPatient   from './pages/admin/EditPatient'
+import EditPatient         from './pages/admin/EditPatient'
+import AdminTestimonials   from './pages/admin/Testimonials'
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('rfr_token')
@@ -42,6 +44,7 @@ function PublicRoutes() {
           <Route path="/enroll"          element={<Enroll />}        />
           <Route path="/contact"         element={<Contact />}       />
           <Route path="/payment"         element={<Payment />}       />
+          <Route path="/testimonials"    element={<Testimonials />}  />
         </Routes>
       </AnimatePresence>
       <Footer />
@@ -60,7 +63,8 @@ export default function App() {
         <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/admin/patients"  element={<ProtectedRoute><AdminPatients /></ProtectedRoute>} />
         <Route path="/admin/patients/:id/edit" element={<ProtectedRoute><EditPatient /></ProtectedRoute>} />
-        <Route path="/admin/payments"  element={<ProtectedRoute><AdminPayments /></ProtectedRoute>} />
+        <Route path="/admin/payments"       element={<ProtectedRoute><AdminPayments /></ProtectedRoute>} />
+        <Route path="/admin/testimonials"  element={<ProtectedRoute><AdminTestimonials /></ProtectedRoute>} />
         <Route path="/admin"           element={<Navigate to="/admin/dashboard" replace />} />
 
         {/* All public routes */}

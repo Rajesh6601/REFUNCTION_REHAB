@@ -57,4 +57,14 @@ export const getAdminPayments= (params) => api.get('/admin/payments',  { params 
 export const exportPatients  = ()       => api.get('/admin/patients/export', { responseType: 'blob' })
 export const exportPayments  = ()       => api.get('/admin/payments/export',  { responseType: 'blob' })
 
+// ─── Testimonials (Public) ──────────────────────────────────────────────────
+export const getTestimonials        = (params) => api.get('/testimonials', { params })
+export const getTestimonial         = (id)     => api.get(`/testimonials/${id}`)
+
+// ─── Testimonials (Admin) ───────────────────────────────────────────────────
+export const getAdminTestimonials   = (params) => api.get('/testimonials/admin/all', { params })
+export const createTestimonial      = (data)   => api.post('/testimonials/admin', data)
+export const updateTestimonial      = (id, data) => api.patch(`/testimonials/admin/${id}`, data)
+export const deleteTestimonial      = (id)     => api.delete(`/testimonials/admin/${id}`)
+
 export default api

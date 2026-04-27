@@ -1,11 +1,12 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, CreditCard, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Users, CreditCard, MessageSquareQuote, LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 
 const nav = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/patients',  icon: Users,            label: 'Patients'  },
-  { to: '/admin/payments',  icon: CreditCard,       label: 'Payments'  },
+  { to: '/admin/payments',      icon: CreditCard,          label: 'Payments'      },
+  { to: '/admin/testimonials',  icon: MessageSquareQuote,  label: 'Testimonials'  },
 ]
 
 export default function AdminLayout({ children }) {

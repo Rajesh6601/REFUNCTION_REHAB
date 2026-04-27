@@ -16,8 +16,9 @@ const navLinks = [
       { label: 'Kids Exercise',             to: '/services/kids' },
     ],
   },
-  { label: 'Enroll',   to: '/enroll' },
-  { label: 'Contact',  to: '/contact' },
+  { label: 'Testimonials', to: '/testimonials' },
+  { label: 'Enroll',      to: '/enroll' },
+  { label: 'Contact',     to: '/contact' },
 ]
 
 function Logo() {

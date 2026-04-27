@@ -101,3 +101,26 @@ model Staff {
 
   @@map("staff")
 }
+
+model Testimonial {
+  id                String   @id @default(cuid())
+  patientName       String
+  patientInitials   String?
+  age               Int?
+  gender            String?
+  condition         String
+  service           String
+  rating            Int      @default(5)
+  reviewText        String
+  videoUrl          String?
+  photoUrl          String?
+  treatmentDuration String?
+  outcome           String?
+  isApproved        Boolean  @default(false)
+  isFeatured        Boolean  @default(false)
+  consentGiven      Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("testimonials")
+}

@@ -5,7 +5,8 @@ const patientRoutes = require('./routes/patients')
 const paymentRoutes = require('./routes/payments')
 const contactRoutes = require('./routes/contact')
 const authRoutes    = require('./routes/auth')
-const adminRoutes   = require('./routes/admin')
+const adminRoutes        = require('./routes/admin')
+const testimonialRoutes  = require('./routes/testimonials')
 
 const app  = express()
 const PORT = process.env.PORT || 4000
@@ -28,7 +29,8 @@ app.use('/api/patients', patientRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/contact',  contactRoutes)
 app.use('/api/auth',     authRoutes)
-app.use('/api/admin',    adminRoutes)
+app.use('/api/admin',         adminRoutes)
+app.use('/api/testimonials',  testimonialRoutes)
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

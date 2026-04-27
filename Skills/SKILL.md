@@ -265,10 +265,12 @@ Prisma handles both local Docker Postgres and managed cloud Postgres identically
 /book                      → Book an Appointment (redirect to enrollment or inline)
 /payment                   → Payment Collection Page (saves to DB)
 /contact                   → Contact + Location (saves to DB)
+/testimonials              → All patient testimonials (public)
 /admin                     → Doctor/Admin Dashboard (protected, JWT auth)
 /admin/patients            → Full paginated patient list with search & filters
 /admin/payments            → Full paginated payment records with revenue summary
 /admin/dashboard           → Overview: total enrolled, today's sessions, revenue stats
+/admin/testimonials        → Manage testimonials (add, edit, approve, delete)
 ```
 
 ---
@@ -322,6 +324,13 @@ Back Pain & Neck Pain, Postural Correction, SI Joint Pain, Fracture Rehabilitati
 - Specialized Assessment & Supervised Exercise
 - Results We Deliver card: Chronic Neck Pain, Chronic Back Pain, Knee Replacements (TKR), Improved Flexibility, Better Quality of Life
 - Image on left, text + results card on right (sticky)
+
+**Patient Testimonials Section** (between Feature Blocks and CTA Banner):
+- Heading: "What Our Patients Say"
+- Auto-scrolling carousel of 3–4 featured testimonials
+- Each card: star rating, quote, patient name/initials, condition, outcome
+- "View All Testimonials →" link to `/testimonials`
+- Data: `GET /api/testimonials?featured=true`
 
 **CTA Banner**:
 > "Take the First Step Towards a Pain-Free & Active Life!"
@@ -507,6 +516,13 @@ GET    /api/admin/patients          → Paginated patient list (page, limit, sea
 GET    /api/admin/payments          → Paginated payment records (page, limit, status filter, date range)
 GET    /api/admin/patients/export   → CSV export of all patients
 GET    /api/admin/payments/export   → CSV export of all payments
+
+# Testimonials
+GET    /api/testimonials            → Get all approved testimonials (public, no auth)
+GET    /api/testimonials/:id        → Get single testimonial by ID (public)
+POST   /api/admin/testimonials      → Create new testimonial (protected)
+PATCH  /api/admin/testimonials/:id  → Update testimonial (edit, approve/reject) (protected)
+DELETE /api/admin/testimonials/:id  → Delete testimonial (protected)
 ```
 
 ---
@@ -590,6 +606,27 @@ model ContactInquiry {
   createdAt DateTime @default(now())
   resolved  Boolean  @default(false)
 }
+
+model Testimonial {
+  id            String   @id @default(cuid())
+  patientName   String                          // Display name (can be first name only for privacy)
+  patientInitials String?                       // e.g. "R.K." — used if patient prefers anonymity
+  age           Int?
+  gender        String?
+  condition     String                          // e.g. "Chronic Back Pain", "Post-Knee Replacement"
+  service       String                          // Which service: seniors, womens-health, pain-management, sports-rehab, post-surgery, kids
+  rating        Int      @default(5)            // 1–5 star rating
+  reviewText    String                          // The testimonial content
+  videoUrl      String?                         // Optional YouTube/video link
+  photoUrl      String?                         // Optional patient photo (with consent)
+  treatmentDuration String?                     // e.g. "3 months", "6 weeks"
+  outcome       String?                         // Brief result: "Pain-free in 8 weeks", "Walking independently"
+  isApproved    Boolean  @default(false)        // Only approved testimonials shown publicly
+  isFeatured    Boolean  @default(false)        // Featured testimonials shown on homepage
+  consentGiven  Boolean  @default(true)         // Patient consent for public display
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
 ```
 
 ---
@@ -610,6 +647,8 @@ model ContactInquiry {
 | `<CTABanner />` | Full-width navy CTA with phone number |
 | `<BatchBadge />` | "7PM–8PM Batch • Few Spots Available" urgency badge |
 | `<WhatsAppButton />` | Floating WhatsApp CTA (bottom-right, always visible) |
+| `<TestimonialCard />` | Patient testimonial card with rating stars, quote, condition, and outcome |
+| `<TestimonialCarousel />` | Auto-scrolling carousel of featured testimonials for homepage |
 
 ---
 
@@ -729,7 +768,8 @@ refunction-rehab/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── layout/      # Navbar, Footer, FloatingWhatsApp
-│   │   │   ├── home/        # Hero, ServiceCards, FeatureBlocks, CTABanner
+│   │   │   ├── home/        # Hero, ServiceCards, FeatureBlocks, TestimonialCarousel, CTABanner
+│   │   │   ├── testimonials/ # TestimonialCard, TestimonialCarousel
 │   │   │   ├── forms/       # EnrollmentForm, PaymentForm, ContactForm
 │   │   │   ├── ui/          # Buttons, Cards, Badges, Modals
 │   │   │   └── receipt/     # ReceiptPDF, ESignaturePad
@@ -741,11 +781,13 @@ refunction-rehab/
 │   │   │   ├── Payment.jsx
 │   │   │   ├── Contact.jsx
 │   │   │   ├── About.jsx
+│   │   │   ├── Testimonials.jsx  # Public testimonials page
 │   │   │   └── admin/
 │   │   │       ├── Login.jsx
 │   │   │       ├── Dashboard.jsx
 │   │   │       ├── Patients.jsx
-│   │   │       └── Payments.jsx
+│   │   │       ├── Payments.jsx
+│   │   │       └── Testimonials.jsx  # Admin testimonial management
 │   │   ├── hooks/           # usePatient, usePayment, useAuth
 │   │   └── lib/             # api.js (axios instance), validators.js
 │
@@ -883,3 +925,81 @@ Each service detail page has a **two-column layout** (`lg:grid-cols-2`, `items-s
 1. **Your Treatment Journey** — 5-step numbered journey with service-colored step badges
 2. **Why Choose Us** — 4 service-specific highlights on a gradient background (navy → service color)
 3. **Session Details** — Duration, frequency, mode + "Book via WhatsApp" button
+
+---
+
+## 15. Patient Testimonials Feature
+
+Patient testimonials build trust and provide social proof. Since healthcare decisions are deeply personal, hearing from real patients who recovered from similar conditions significantly boosts enrollment confidence.
+
+### 15.1 Homepage Testimonials Section
+
+Placed between the Feature Blocks and CTA Banner on the homepage.
+
+**Layout:**
+- Section heading: "What Our Patients Say" with subtitle "Real stories from real patients"
+- **Carousel/slider** of 3–4 featured testimonials (auto-scroll with pause on hover)
+- Each card shows: star rating, quote excerpt (2–3 lines), patient name or initials, condition treated, outcome
+- "View All Testimonials →" link to `/testimonials`
+- Background: light (`bg-light`) to contrast with white feature blocks above
+
+**Design:**
+- Cards: white, rounded-2xl, shadow, with a large teal quote icon (`"`) at top-left
+- Star rating: gold stars using Lucide `Star` icon
+- Patient identity: Name or initials + age range + condition badge
+- Outcome badge: green pill showing result (e.g., "Pain-free in 6 weeks")
+
+### 15.2 Testimonials Page (`/testimonials`)
+
+Dedicated page showing all approved testimonials.
+
+**Layout:**
+- Hero: gradient banner with heading "Patient Success Stories"
+- Filter tabs: All | Seniors | Women's Health | Pain Management | Sports Injury | Post-Surgery | Kids
+- Grid of testimonial cards (2 columns on desktop, 1 on mobile)
+- Each card shows full review text, star rating, patient name/initials, condition, service, treatment duration, outcome
+- Video testimonials: embedded YouTube player or play button overlay if `videoUrl` is present
+- Pagination or "Load More" for large lists
+
+**Data:** Fetched from `GET /api/testimonials` (only approved testimonials returned)
+
+### 15.3 Admin Testimonials Management (`/admin/testimonials`)
+
+Protected page for Dr. Neha / staff to manage testimonials.
+
+**Features:**
+- **Add Testimonial** button → modal/form with fields:
+  - Patient Name*, Patient Initials (optional), Age, Gender
+  - Condition Treated*, Service Category* (dropdown: seniors, womens-health, pain-management, sports-rehab, post-surgery, kids)
+  - Rating* (1–5 star selector)
+  - Review Text* (textarea)
+  - Treatment Duration (e.g., "3 months")
+  - Outcome (e.g., "Pain-free", "Walking independently")
+  - Video URL (optional YouTube/Vimeo link)
+  - Patient Photo URL (optional)
+  - Consent checkbox (mandatory)
+- **Table view** of all testimonials: Patient Name | Condition | Rating | Status (Approved/Pending) | Featured | Date | Actions
+- **Actions per testimonial**: Edit, Approve/Reject toggle, Feature/Unfeature toggle, Delete
+- **Bulk actions**: Approve selected, Delete selected
+- Status badge: Green "Approved", Amber "Pending", Red "Rejected"
+
+**Workflow:**
+1. Dr. Neha or staff adds a testimonial after getting verbal/written consent from patient
+2. Testimonial is created with `isApproved: false` by default
+3. Staff reviews and toggles `isApproved: true` to make it public
+4. Optionally marks as `isFeatured: true` to show on homepage carousel
+
+### 15.4 Privacy & Consent Rules
+
+- **Patient consent is mandatory** — the `consentGiven` field must be `true` before a testimonial can be approved
+- Patients can choose to display their **full name, first name only, or just initials** — the `patientInitials` field provides anonymity
+- **No medical records or identifiable health data** beyond what the patient consents to share
+- Age is optional and displayed as a range (e.g., "60s") not exact age
+- Photo is optional and only used with explicit consent
+- Staff should **never fabricate testimonials** — all must come from real patients
+
+### 15.5 Service Detail Page Integration
+
+Each service detail page should show 1–2 relevant testimonials at the bottom (above the CTA banner), filtered by the service slug. This gives contextual social proof — a patient viewing "Physiotherapy for Seniors" sees testimonials from other seniors.
+
+**Implementation:** Filter from `GET /api/testimonials?service={slug}&limit=2&featured=true`

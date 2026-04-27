@@ -3,6 +3,7 @@ import Hero from '../components/home/Hero'
 import ServicesStrip from '../components/home/ServicesStrip'
 import WhyChooseUs from '../components/home/WhyChooseUs'
 import FeatureBlocks from '../components/home/FeatureBlocks'
+import TestimonialCarousel from '../components/testimonials/TestimonialCarousel'
 import CTABanner from '../components/home/CTABanner'
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
       <ServicesStrip />
       <WhyChooseUs />
       <FeatureBlocks />
+      <TestimonialCarousel />
       <CTABanner />
     </motion.div>
   )
