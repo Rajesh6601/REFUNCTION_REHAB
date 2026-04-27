@@ -67,7 +67,11 @@ router.post('/enroll', async (req, res) => {
     })
   } catch (err) {
     if (err.code === 'P2002') {
-      return res.status(409).json({ error: 'A patient with this mobile number is already enrolled' })
+      const field = err.meta?.target?.[0] || 'mobile'
+      if (field === 'mobile') {
+        return res.status(409).json({ error: 'A patient with this mobile number is already enrolled' })
+      }
+      return res.status(409).json({ error: 'Enrollment failed due to a duplicate record. Please try again.' })
     }
     console.error('[enroll]', err)
     res.status(500).json({ error: 'Failed to enroll patient' })
