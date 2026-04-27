@@ -257,7 +257,8 @@ Prisma handles both local Docker Postgres and managed cloud Postgres identically
 /services/seniors          → Physiotherapy for Seniors
 /services/womens-health    → Women's Health (postnatal, pelvic floor)
 /services/pain-management  → Neck, Back & Shoulder Pain
-/services/sports-rehab     → Sports Injury & Post-Surgery
+/services/sports-rehab     → Sports Injury Rehab
+/services/post-surgery     → Post-Surgery Rehab
 /services/kids             → Kids Exercise & Development
 /about                     → About Dr. Neha + Clinic
 /enroll                    → Patient Enrollment Form (saves to DB)
@@ -289,7 +290,7 @@ Prisma handles both local Docker Postgres and managed cloud Postgres identically
 3. 💪 Back, Neck & Shoulder Pain
 4. ⚽ Sports Injury Rehab
 5. 🧒 Kids Exercise Program
-6. 🦴 Post-Surgery Rehabilitation
+6. 🦴 Post-Surgery Rehab
 
 **Why Choose Us** — 4 icon stats in a teal band:
 - 15+ Years Experience
@@ -300,22 +301,27 @@ Prisma handles both local Docker Postgres and managed cloud Postgres identically
 **Conditions We Treat** (from Image 4):
 Back Pain & Neck Pain, Postural Correction, SI Joint Pain, Fracture Rehabilitation, Sports Injuries, Orthopedic Conditions, Neurological Conditions, Arthritis, Osteoporosis
 
+**Feature Blocks Layout** — Two-column grid (`lg:grid-cols-2`) with `items-start`. The text column uses `lg:sticky lg:top-24` so it stays visible as users scroll past the tall portrait images. Info cards (Exercise Journey, Treats, Results) are placed in the text column alongside the heading and description to fill the space.
+
 **Senior Care Feature Block** (from Image 1):
 - Headline: "Physiotherapy for Seniors"
 - Sub: "Specialized Care for Pain Relief, Mobility & Better Independence"
 - We Help Manage: Neck & Joint Pain, Shoulder Pain, Arthritis, Osteoporosis & Low Bone Density
-- Exercise journey: Neck Stretch → Shoulder Mobility → Knee Strengthening → Balance Training
+- Exercise Journey card (navy bg): Neck Stretch → Shoulder Mobility → Knee Strengthening → Balance Training
+- Image on left, text + journey card on right (sticky)
 
 **Women's Health Feature Block** (from Image 2 & 5):
 - Headline: "Post-Pregnancy Belly Not Reducing?"
 - Wrong vs Right approach (crunches vs breathing + core activation)
-- Target: Diastasis Recti, Back Pain, Pelvic Floor Weakness, Postnatal Recovery
+- Treats card (gradient bg): Diastasis Recti, Back Pain, Pelvic Floor Weakness, Postnatal Recovery, Prenatal Fitness
 - 7PM–8PM Batch — Few Spots Available
+- Text + treats card on left (sticky), image on right
 
 **Pain Management Feature Block** (from Image 3):
 - Headline: "Still Struggling with Back Pain, Neck Pain, or Shoulder Pain?"
 - Specialized Assessment & Supervised Exercise
-- Results: Treated Chronic Neck Pain, Back Pain, Knee Replacements (TKRs) • Improved Movement & Flexibility • Reduced Pain, Better Quality of Life
+- Results We Deliver card: Chronic Neck Pain, Chronic Back Pain, Knee Replacements (TKR), Improved Flexibility, Better Quality of Life
+- Image on left, text + results card on right (sticky)
 
 **CTA Banner**:
 > "Take the First Step Towards a Pain-Free & Active Life!"
@@ -624,34 +630,56 @@ model ContactInquiry {
 
 ## 9. Services Content
 
-### Physiotherapy for Seniors
+### Physiotherapy for Seniors (`/services/seniors`)
 - **Tagline**: Better Movement. Better Health. Better Life.
-- **Focus**: Pain relief, mobility, independence
+- **Image**: `images.seniors` (pic-1.jpeg)
 - **Manages**: Neck & Joint Pain, Shoulder Pain, Arthritis, Osteoporosis & Low Bone Density
-- **Program**: Supervised Exercise — Neck Stretch, Shoulder Mobility, Knee Strengthening, Balance Training
-- **Promise**: Safe, supervised, personalized, effective. Medical conditions monitored regularly.
+- **Journey**: Initial Assessment → Neck Stretches → Shoulder Mobility → Knee Strengthening → Balance Training
+- **Highlights**: Gentle age-tailored exercises, continuous vitals monitoring, fall prevention programs, home exercise plans
+- **Session Info**: 45–60 min, 3–5 sessions/week, In-clinic & Home visits
 
-### Women's Health & Postnatal
+### Women's Health & Postnatal (`/services/womens-health`)
 - **Tagline**: Heal. Strengthen. Feel confident in your body again.
-- **Target**: Postpartum moms, women with Diastasis Recti, Pelvic Floor Weakness, Back Pain
-- **Approach**: Starts with core & pelvic floor assessment → Breathing + Core Activation → Safe Progression
-- **NOT**: Random crunches or generic workouts
+- **Image**: `images.womensHealth` (pic-4.jpeg)
+- **Target**: Diastasis Recti, Pelvic Floor Weakness, Back Pain During Pregnancy, Postnatal Recovery, Incontinence
+- **Journey**: Core & Pelvic Assessment → Breathing Techniques → Core Activation → Progressive Loading → Full Functional Training
+- **Highlights**: Certified prenatal & postnatal Pilates, safe trimester-specific exercises, pelvic floor recovery, small group batches
+- **Session Info**: 60 min, 3 sessions/week, In-clinic (7PM–8PM batch)
 - **Batch**: 7PM–8PM | Limited spots
-- **Credential**: Dr. Neha Trivedi — MPT, trained in prenatal and postnatal Pilates
 
-### Back, Neck & Shoulder Pain
-- **Tagline**: Stop Just Relieving the Pain — Treat the Cause
-- **Problem**: Regular exercises not helping? You need a specialized program designed for YOU
-- **Solution**: Specialized Assessment + Supervised Exercise
-- **Results**: Treated Chronic Neck Pain, Back Pain, Knee Replacements (TKRs); Improved Movement & Flexibility; Reduced Pain
+### Back, Neck & Shoulder Pain (`/services/pain-management`)
+- **Tagline**: Stop Just Relieving the Pain — Treat the Cause.
+- **Image**: `images.painManagement` (pic-2.jpeg)
+- **Conditions**: Chronic Back Pain, Cervical Spondylosis, Shoulder Impingement, SI Joint Pain, Disc Herniation, Postural Dysfunction
+- **Journey**: Specialized Assessment → Pain Education → Manual Therapy → Exercise Prescription → Functional Return
+- **Highlights**: Root-cause analysis, hands-on manual therapy + exercise, posture correction and ergonomic guidance, long-term prevention strategies
+- **Session Info**: 45–60 min, 3–5 sessions/week, In-clinic
 
-### Sports Injury & Post-Surgery Rehab
-- **Conditions**: Sports Injuries, Fracture Rehabilitation, Post-Surgery Recovery, SI Joint Pain
+### Sports Injury Rehab (`/services/sports-rehab`)
+- **Tagline**: Back to the Game, Stronger Than Before.
+- **Image**: `images.clinic` (pic-3.jpeg)
+- **Conditions**: ACL Reconstruction, Knee Replacement (TKR), Fracture Rehabilitation, Shoulder Surgery Recovery, Ankle Sprains, Muscle Tears
 - **Approach**: Evidence-based progressive rehab, sport-specific return-to-play protocols
+- **Journey**: Injury Assessment → Acute Phase → Strength & Stability → Functional Training → Return to Play/Activity
+- **Highlights**: Surgeon-coordinated rehab protocols, sport-specific return-to-play programs, progressive loading with objective benchmarks, pre-surgery prehab
+- **Session Info**: 45–60 min, 4–6 sessions/week, In-clinic
 
-### Kids Exercise & Development
-- **Focus**: Physical development, posture, coordination
-- **Features**: Age-appropriate programs, supervised sessions, fun-based approach
+### Post-Surgery Rehab (`/services/post-surgery`)
+- **Tagline**: Structured Recovery, Optimal Outcomes.
+- **Image**: `images.postSurgery` (pic-8.jpeg)
+- **Conditions**: Knee Replacement, Hip Replacement, Spinal Surgery, Rotator Cuff Repair, Fracture Fixation, Joint Replacements
+- **Approach**: Comprehensive post-operative rehabilitation, surgeon-coordinated protocols
+- **Journey**: Post-Op Assessment → Early Mobilization → Strengthening Phase → Functional Restoration → Full Recovery
+- **Highlights**: Surgeon-coordinated protocols, phase-wise progression based on healing timelines, pain management and scar tissue mobilization, home exercise programs
+- **Session Info**: 45–60 min, 4–6 sessions/week, In-clinic
+
+### Kids Exercise Program (`/services/kids`)
+- **Tagline**: Fun, Safe & Developmentally Appropriate.
+- **Image**: `images.kids` (pic-7.jpeg)
+- **Conditions**: Posture Correction, Flat Feet, Core Strengthening, Coordination & Balance, Sports Conditioning, Weight Management
+- **Journey**: Child Assessment → Fun Movement Games → Core & Postural Work → Sport Skills → Progress Review
+- **Highlights**: Fun game-based exercises, small groups (max 8–10 kids), supervised by qualified physiotherapists, regular progress reports for parents
+- **Session Info**: 60 min, 3 sessions/week, In-clinic (SDA location)
 
 ---
 
@@ -813,43 +841,45 @@ When building this app from scratch, follow this order:
 
 ## 14. Visual Content & Imagery
 
-The portal must include relevant photographs and images to make it more appealing, relatable, and trustworthy for patients. Visual content helps patients understand treatments, feel comfortable with the clinic environment, and connect emotionally with the care they will receive.
+The portal includes relevant photographs and images to make it more appealing, relatable, and trustworthy for patients.
 
-### Why Images Matter
-- **Patients relate better** to real exercise and treatment visuals than text-only descriptions
-- **Builds trust** — seeing the clinic, equipment, and doctor in action reduces anxiety for new patients
-- **Increases engagement** — pages with images have significantly higher time-on-page and conversion rates
-- **Demonstrates expertise** — showing supervised exercises and proper form highlights the clinic's professional approach
+### Current Image Mapping (`client/src/lib/images.js`)
 
-### Where to Add Images
-
-| Location | Image Type | Purpose |
+| Key | File | Used For |
 |---|---|---|
-| **Homepage Hero** | Dr. Neha with patient / clinic interior | First impression, builds trust |
-| **Services Cards** | Exercise/treatment photos per service | Helps patients identify their need |
-| **Senior Care Section** | Elderly patients doing guided exercises | Relatable for senior patients and their families |
-| **Women's Health Section** | Postnatal recovery / Pilates exercises | Appeals to target demographic |
-| **Pain Management Section** | Neck/back/shoulder therapy in action | Shows specialized treatment approach |
-| **Sports Rehab Section** | Sports injury rehabilitation exercises | Attracts active/sports patients |
-| **Kids Exercise Section** | Children in fun exercise activities | Appeals to parents |
-| **About Page** | Dr. Neha Trivedi professional photo, clinic facility, equipment | Credibility and familiarity |
-| **Service Detail Pages** | Step-by-step exercise demonstrations | Educates and engages patients |
-| **Enrollment Success** | Welcoming/motivational image | Positive reinforcement |
-| **Contact Page** | Clinic exterior / reception area | Helps patients locate and recognize the clinic |
+| `hero` | `/images/pic-6.png` | Homepage hero — Dr. Neha's photo |
+| `seniors` | `/images/pic-1.jpeg` | Senior Care — home page & service detail |
+| `painManagement` | `/images/pic-2.jpeg` | Pain Management — home page & service detail |
+| `clinic` | `/images/pic-3.jpeg` | Sports Injury Rehab — service card & detail |
+| `womensHealth` | `/images/pic-4.jpeg` | Women's Health — home page & service detail |
+| `womensHealth2` | `/images/pic-5.jpeg` | Women's Health (alternate) |
+| `kids` | `/images/pic-7.jpeg` | Kids Exercise — service card & detail |
+| `postSurgery` | `/images/pic-8.jpeg` | Post-Surgery Rehab — service card & detail |
+
+### Image Display Rules
+
+All images are **portrait-oriented** (1024×1536px, 2:3 ratio). Display rules:
+
+- **Home page feature blocks**: Rendered as plain `<motion.img>` at full width with natural height — no `object-cover` or forced aspect ratio. No cropping, no gaps.
+- **Service cards** (Services.jsx): Fixed height `h-48` with `object-cover` — slight crop is acceptable for uniform grid thumbnails.
+- **Service detail pages**: Rendered as plain `<motion.img>` at full width with natural height — same as home page.
+- **Hero backgrounds**: Used at 20% opacity as a background overlay behind the gradient.
 
 ### Image Guidelines
 - **Prefer real clinic photos** over stock images whenever possible — authenticity builds trust
-- All images should be **optimized for web** (WebP format, compressed, lazy-loaded)
+- All images should be **optimized for web** (compressed, lazy-loaded)
 - Use **alt text** for accessibility (e.g., "Senior patient performing guided knee strengthening exercise")
-- Maintain **consistent aspect ratios** per section (16:9 for hero banners, 4:3 or 1:1 for cards)
-- Images should reflect the **diverse patient base** — seniors, women, kids, athletes
-- Store images in `/client/public/images/` or use Cloudinary for CDN delivery
-- Every service page should have at least **2–3 relevant images** showing exercises or treatment in progress
+- Images are portrait (2:3) — never force them into landscape containers with `object-cover` as this crops important text overlays
+- Store images in `/client/public/images/`
+- Additional raw images available in `/client/img/` (pic-1 through pic-8)
 
-### Suggested Image Categories
-1. **Exercise Demonstrations** — Neck stretches, shoulder mobility, knee strengthening, balance training, core activation, Pilates
-2. **Treatment in Action** — Physiotherapy sessions, supervised exercise, assessment procedures
-3. **Facility & Equipment** — Clinic interior, treatment rooms, exercise area, equipment
-4. **Doctor & Staff** — Professional headshots, candid treatment photos
-5. **Patient Journey** — Welcome/reception, consultation, exercise session, recovery milestones
-6. **Results & Testimonials** — Before/after posture improvements, patient success stories (with consent)
+### Service Detail Page Layout
+
+Each service detail page has a **two-column layout** (`lg:grid-cols-2`, `items-start`):
+
+**Left column**: Tagline, full-width image (natural height), description text, "What We Treat" checklist, CTA buttons.
+
+**Right column** (3 stacked cards):
+1. **Your Treatment Journey** — 5-step numbered journey with service-colored step badges
+2. **Why Choose Us** — 4 service-specific highlights on a gradient background (navy → service color)
+3. **Session Details** — Duration, frequency, mode + "Book via WhatsApp" button
