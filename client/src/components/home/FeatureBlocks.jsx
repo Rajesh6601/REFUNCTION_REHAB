@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, ArrowRight, Clock } from 'lucide-react'
 import { images } from '../../lib/images'
-import OptimizedImage from '../ui/OptimizedImage'
+
 
 function SectionLabel({ children }) {
   return (
@@ -40,13 +40,15 @@ export default function FeatureBlocks() {
               transition={{ duration: 0.7 }}
               className="order-2 lg:order-1"
             >
-              <OptimizedImage
+              <motion.img
                 src={images.seniors}
                 alt="Senior physiotherapy exercise session"
-                aspectRatio="auto"
-                className="mb-6 shadow-lg bg-white"
-                animation="fadeLeft"
-                objectFit="contain"
+                loading="lazy"
+                className="w-full rounded-2xl shadow-lg mb-6"
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7 }}
               />
               <div className="bg-navy rounded-3xl p-8 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
@@ -172,12 +174,15 @@ export default function FeatureBlocks() {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
-              <OptimizedImage
+              <motion.img
                 src={images.womensHealth}
                 alt="Postnatal recovery and core activation exercise"
-                aspectRatio="16/9"
-                className="mb-6 shadow-lg"
-                animation="fadeRight"
+                loading="lazy"
+                className="w-full rounded-2xl shadow-lg mb-6"
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7 }}
               />
               <div className="rounded-3xl overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #1B2F5E, #1A7F8E)' }}
@@ -216,12 +221,15 @@ export default function FeatureBlocks() {
               transition={{ duration: 0.7 }}
               className="order-2 lg:order-1"
             >
-              <OptimizedImage
+              <motion.img
                 src={images.painManagement}
                 alt="Specialized neck and shoulder pain therapy"
-                aspectRatio="16/9"
-                className="mb-6 shadow-lg"
-                animation="fadeLeft"
+                loading="lazy"
+                className="w-full rounded-2xl shadow-lg mb-6"
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7 }}
               />
               <div className="bg-light rounded-3xl p-8">
                 <div className="text-teal text-sm font-semibold uppercase tracking-wider mb-5">Results We Deliver</div>

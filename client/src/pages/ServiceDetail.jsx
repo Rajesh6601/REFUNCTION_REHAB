@@ -1,10 +1,10 @@
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle, ArrowRight, Clock, Phone } from 'lucide-react'
+import { CheckCircle, ArrowRight, Clock, Phone, Star, Shield, Users } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
 import CTABanner from '../components/home/CTABanner'
 import { images } from '../lib/images'
-import OptimizedImage from '../components/ui/OptimizedImage'
+
 
 const serviceData = {
   seniors: {
@@ -23,6 +23,13 @@ const serviceData = {
       { step: '04', title: 'Knee Strengthening', desc: 'Quad & hamstring exercises for joint stability' },
       { step: '05', title: 'Balance Training',   desc: 'Progressive balance and proprioception training to prevent falls' },
     ],
+    highlights: [
+      'Gentle, safe exercises tailored for age-related conditions',
+      'Continuous monitoring of vitals and medical conditions',
+      'Fall prevention and balance confidence programs',
+      'Home exercise plans for continued progress',
+    ],
+    sessionInfo: { duration: '45–60 min', frequency: '3–5 sessions/week', mode: 'In-clinic & Home visits' },
   },
   'womens-health': {
     title: "Women's Health & Postnatal",
@@ -40,6 +47,13 @@ const serviceData = {
       { step: '04', title: 'Progressive Loading',       desc: 'Gradual strengthening of the pelvic floor and core' },
       { step: '05', title: 'Full Functional Training',  desc: 'Return to normal activities, sports, and fitness' },
     ],
+    highlights: [
+      'Prenatal & postnatal Pilates by certified specialist',
+      'Safe exercises designed for every trimester',
+      'Pelvic floor recovery and core rebuilding',
+      'Small group batches for personalized attention',
+    ],
+    sessionInfo: { duration: '60 min', frequency: '3 sessions/week', mode: 'In-clinic (7PM–8PM batch)' },
     batch: true,
   },
   'pain-management': {
@@ -58,9 +72,16 @@ const serviceData = {
       { step: '04', title: 'Exercise Prescription',  desc: 'Custom therapeutic exercise program' },
       { step: '05', title: 'Functional Return',      desc: 'Graduated return to daily activities, work, and sport' },
     ],
+    highlights: [
+      'Root-cause analysis — not just symptom relief',
+      'Hands-on manual therapy combined with exercise',
+      'Posture correction and ergonomic guidance',
+      'Long-term pain prevention strategies',
+    ],
+    sessionInfo: { duration: '45–60 min', frequency: '3–5 sessions/week', mode: 'In-clinic' },
   },
   'sports-rehab': {
-    title: 'Sports Injury & Post-Surgery Rehab',
+    title: 'Sports Injury Rehab',
     tagline: 'Back to the Game, Stronger Than Before.',
     color: '#E8630A',
     image: images.clinic,
@@ -75,6 +96,37 @@ const serviceData = {
       { step: '04', title: 'Functional Training',   desc: 'Sport and activity-specific movement patterns' },
       { step: '05', title: 'Return to Play/Activity', desc: 'Gradual, supervised return with performance benchmarks' },
     ],
+    highlights: [
+      'Surgeon-coordinated rehab protocols',
+      'Sport-specific return-to-play programs',
+      'Progressive loading with objective benchmarks',
+      'Pre-surgery prehab for better outcomes',
+    ],
+    sessionInfo: { duration: '45–60 min', frequency: '4–6 sessions/week', mode: 'In-clinic' },
+  },
+  'post-surgery': {
+    title: 'Post-Surgery Rehab',
+    tagline: 'Structured Recovery, Optimal Outcomes.',
+    color: '#7C3AED',
+    image: images.postSurgery,
+    hero: 'Comprehensive Rehabilitation After Orthopedic & Neurological Surgeries',
+    desc: `Recovering from surgery requires a structured, progressive rehabilitation plan. Our post-surgery programs are designed to help you regain full function safely and effectively.
+    We work closely with your surgeon to ensure your rehab aligns with surgical protocols and recovery timelines.`,
+    treats: ['Knee Replacement', 'Hip Replacement', 'Spinal Surgery', 'Rotator Cuff Repair', 'Fracture Fixation', 'Joint Replacements'],
+    journey: [
+      { step: '01', title: 'Post-Op Assessment',     desc: 'Evaluate surgical site, pain levels, and baseline function' },
+      { step: '02', title: 'Early Mobilization',     desc: 'Gentle range of motion and weight-bearing as tolerated' },
+      { step: '03', title: 'Strengthening Phase',    desc: 'Progressive muscle activation and joint stability work' },
+      { step: '04', title: 'Functional Restoration',  desc: 'Return to daily activities — walking, stairs, self-care' },
+      { step: '05', title: 'Full Recovery',           desc: 'Advanced strengthening and return to work or sport' },
+    ],
+    highlights: [
+      'Surgeon-coordinated rehabilitation protocols',
+      'Phase-wise progression based on healing timelines',
+      'Pain management and scar tissue mobilization',
+      'Home exercise programs for continued recovery',
+    ],
+    sessionInfo: { duration: '45–60 min', frequency: '4–6 sessions/week', mode: 'In-clinic' },
   },
   kids: {
     title: 'Kids Exercise Program',
@@ -92,6 +144,13 @@ const serviceData = {
       { step: '04', title: 'Sport Skills',           desc: 'Fundamental athletic movements for school sports' },
       { step: '05', title: 'Progress Review',        desc: 'Regular check-ins with parents and goal updates' },
     ],
+    highlights: [
+      'Fun, game-based exercises kids actually enjoy',
+      'Small groups (max 8–10 kids) for personal attention',
+      'Supervised by qualified physiotherapists',
+      'Regular progress reports shared with parents',
+    ],
+    sessionInfo: { duration: '60 min', frequency: '3 sessions/week', mode: 'In-clinic (SDA location)' },
   },
 }
 
@@ -132,12 +191,15 @@ export default function ServiceDetail() {
             {/* Left */}
             <div>
               <p className="text-orange font-semibold text-lg mb-4">{svc.tagline}</p>
-              <OptimizedImage
+              <motion.img
                 src={svc.image}
                 alt={svc.title}
-                aspectRatio="16/9"
-                className="mb-6 shadow-lg"
-                animation="fadeUp"
+                loading="lazy"
+                className="w-full rounded-2xl shadow-lg mb-6"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7 }}
               />
               {svc.desc.split('\n').map((p, i) => (
                 <p key={i} className="text-muted leading-relaxed mb-4">{p.trim()}</p>
@@ -162,25 +224,76 @@ export default function ServiceDetail() {
               </div>
             </div>
 
-            {/* Journey */}
-            <div className="bg-light rounded-3xl p-8">
-              <h3 className="font-display font-semibold text-xl text-navy mb-6">Your Treatment Journey</h3>
-              <div className="space-y-5">
-                {svc.journey.map((step) => (
-                  <div key={step.step} className="flex gap-4 items-start">
-                    <span
-                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-accent font-bold text-sm"
-                      style={{ background: svc.color, color: 'white' }}
-                    >
-                      {step.step}
-                    </span>
-                    <div>
-                      <div className="font-semibold text-navy">{step.title}</div>
-                      <div className="text-muted text-sm mt-0.5">{step.desc}</div>
+            {/* Right column */}
+            <div className="space-y-6">
+              {/* Journey */}
+              <div className="bg-light rounded-3xl p-8">
+                <h3 className="font-display font-semibold text-xl text-navy mb-6">Your Treatment Journey</h3>
+                <div className="space-y-5">
+                  {svc.journey.map((step) => (
+                    <div key={step.step} className="flex gap-4 items-start">
+                      <span
+                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-accent font-bold text-sm"
+                        style={{ background: svc.color, color: 'white' }}
+                      >
+                        {step.step}
+                      </span>
+                      <div>
+                        <div className="font-semibold text-navy">{step.title}</div>
+                        <div className="text-muted text-sm mt-0.5">{step.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Why Choose Us */}
+              {svc.highlights && (
+                <div className="rounded-3xl p-8 text-white" style={{ background: `linear-gradient(135deg, #1B2F5E, ${svc.color})` }}>
+                  <h3 className="font-display font-semibold text-xl mb-5 flex items-center gap-2">
+                    <Star size={20} className="text-gold" /> Why Choose Us
+                  </h3>
+                  <div className="space-y-3">
+                    {svc.highlights.map((h) => (
+                      <div key={h} className="flex items-start gap-3 text-sm text-white/90">
+                        <Shield size={16} className="text-gold flex-shrink-0 mt-0.5" />
+                        <span>{h}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Session Details */}
+              {svc.sessionInfo && (
+                <div className="bg-light rounded-3xl p-8">
+                  <h3 className="font-display font-semibold text-xl text-navy mb-5 flex items-center gap-2">
+                    <Clock size={20} className="text-teal" /> Session Details
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center py-3 border-b border-gray-200">
+                      <span className="text-muted text-sm">Duration</span>
+                      <span className="font-semibold text-navy text-sm">{svc.sessionInfo.duration}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b border-gray-200">
+                      <span className="text-muted text-sm">Frequency</span>
+                      <span className="font-semibold text-navy text-sm">{svc.sessionInfo.frequency}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3">
+                      <span className="text-muted text-sm">Mode</span>
+                      <span className="font-semibold text-navy text-sm">{svc.sessionInfo.mode}</span>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <a
+                    href={wa}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-6 w-full inline-flex items-center justify-center gap-2 bg-teal text-white font-semibold py-3 rounded-xl hover:bg-teal/90 transition-colors text-sm"
+                  >
+                    <Phone size={16} /> Book via WhatsApp
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>
