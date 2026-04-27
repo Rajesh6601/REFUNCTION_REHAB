@@ -808,3 +808,48 @@ When building this app from scratch, follow this order:
 - Actions: View receipt, Download PDF receipt
 - **Revenue Summary bar** at top: Total Collected | Pending | Refunded
 - **Export to CSV** button (calls `GET /api/admin/payments/export`)
+
+---
+
+## 14. Visual Content & Imagery
+
+The portal must include relevant photographs and images to make it more appealing, relatable, and trustworthy for patients. Visual content helps patients understand treatments, feel comfortable with the clinic environment, and connect emotionally with the care they will receive.
+
+### Why Images Matter
+- **Patients relate better** to real exercise and treatment visuals than text-only descriptions
+- **Builds trust** — seeing the clinic, equipment, and doctor in action reduces anxiety for new patients
+- **Increases engagement** — pages with images have significantly higher time-on-page and conversion rates
+- **Demonstrates expertise** — showing supervised exercises and proper form highlights the clinic's professional approach
+
+### Where to Add Images
+
+| Location | Image Type | Purpose |
+|---|---|---|
+| **Homepage Hero** | Dr. Neha with patient / clinic interior | First impression, builds trust |
+| **Services Cards** | Exercise/treatment photos per service | Helps patients identify their need |
+| **Senior Care Section** | Elderly patients doing guided exercises | Relatable for senior patients and their families |
+| **Women's Health Section** | Postnatal recovery / Pilates exercises | Appeals to target demographic |
+| **Pain Management Section** | Neck/back/shoulder therapy in action | Shows specialized treatment approach |
+| **Sports Rehab Section** | Sports injury rehabilitation exercises | Attracts active/sports patients |
+| **Kids Exercise Section** | Children in fun exercise activities | Appeals to parents |
+| **About Page** | Dr. Neha Trivedi professional photo, clinic facility, equipment | Credibility and familiarity |
+| **Service Detail Pages** | Step-by-step exercise demonstrations | Educates and engages patients |
+| **Enrollment Success** | Welcoming/motivational image | Positive reinforcement |
+| **Contact Page** | Clinic exterior / reception area | Helps patients locate and recognize the clinic |
+
+### Image Guidelines
+- **Prefer real clinic photos** over stock images whenever possible — authenticity builds trust
+- All images should be **optimized for web** (WebP format, compressed, lazy-loaded)
+- Use **alt text** for accessibility (e.g., "Senior patient performing guided knee strengthening exercise")
+- Maintain **consistent aspect ratios** per section (16:9 for hero banners, 4:3 or 1:1 for cards)
+- Images should reflect the **diverse patient base** — seniors, women, kids, athletes
+- Store images in `/client/public/images/` or use Cloudinary for CDN delivery
+- Every service page should have at least **2–3 relevant images** showing exercises or treatment in progress
+
+### Suggested Image Categories
+1. **Exercise Demonstrations** — Neck stretches, shoulder mobility, knee strengthening, balance training, core activation, Pilates
+2. **Treatment in Action** — Physiotherapy sessions, supervised exercise, assessment procedures
+3. **Facility & Equipment** — Clinic interior, treatment rooms, exercise area, equipment
+4. **Doctor & Staff** — Professional headshots, candid treatment photos
+5. **Patient Journey** — Welcome/reception, consultation, exercise session, recovery milestones
+6. **Results & Testimonials** — Before/after posture improvements, patient success stories (with consent)
