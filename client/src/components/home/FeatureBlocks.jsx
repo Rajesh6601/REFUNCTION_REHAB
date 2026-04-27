@@ -31,7 +31,7 @@ export default function FeatureBlocks() {
       {/* --- SENIORS BLOCK --- */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Visual */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -45,12 +45,42 @@ export default function FeatureBlocks() {
                 alt="Senior physiotherapy exercise session"
                 loading="lazy"
                 className="w-full rounded-2xl shadow-lg mb-6"
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7 }}
               />
-              <div className="bg-navy rounded-3xl p-8 text-white relative overflow-hidden">
+            </motion.div>
+            {/* Text */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="order-1 lg:order-2 lg:sticky lg:top-24"
+            >
+              <SectionLabel>Senior Care</SectionLabel>
+              <h2 className="section-heading text-3xl md:text-4xl mt-2 mb-4 text-navy">
+                Physiotherapy for Seniors
+              </h2>
+              <p className="text-navy/70 text-lg font-medium mb-3">
+                Specialized Care for Pain Relief, Mobility & Better Independence
+              </p>
+              <p className="text-muted leading-relaxed mb-6">
+                As we age, our bodies require extra attention and care. Our senior physiotherapy programs are
+                medically supervised, personalized, and designed to bring back the joy of movement.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mb-8">
+                {['Neck & Joint Pain', 'Shoulder Pain', 'Arthritis', 'Osteoporosis & Low Bone Density'].map((c) => (
+                  <div key={c} className="flex items-center gap-2 text-sm text-navy">
+                    <CheckCircle size={16} className="text-teal flex-shrink-0" />
+                    {c}
+                  </div>
+                ))}
+              </div>
+
+              {/* Exercise Journey */}
+              <div className="bg-navy rounded-3xl p-8 text-white relative overflow-hidden mb-6">
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
                   style={{ background: 'radial-gradient(circle, #1A7F8E, transparent)', transform: 'translate(30%, -30%)' }} />
                 <div className="text-teal text-sm font-semibold uppercase tracking-wider mb-6">Exercise Journey</div>
@@ -75,34 +105,7 @@ export default function FeatureBlocks() {
                   <div className="text-gold font-display font-semibold">Dr. Neha Trivedi, PT, MPT</div>
                 </div>
               </div>
-            </motion.div>
-            {/* Text */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-              className="order-1 lg:order-2"
-            >
-              <SectionLabel>Senior Care</SectionLabel>
-              <h2 className="section-heading text-3xl md:text-4xl mt-2 mb-4 text-navy">
-                Physiotherapy for Seniors
-              </h2>
-              <p className="text-navy/70 text-lg font-medium mb-3">
-                Specialized Care for Pain Relief, Mobility & Better Independence
-              </p>
-              <p className="text-muted leading-relaxed mb-6">
-                As we age, our bodies require extra attention and care. Our senior physiotherapy programs are
-                medically supervised, personalized, and designed to bring back the joy of movement.
-              </p>
-              <div className="grid grid-cols-2 gap-3 mb-8">
-                {['Neck & Joint Pain', 'Shoulder Pain', 'Arthritis', 'Osteoporosis & Low Bone Density'].map((c) => (
-                  <div key={c} className="flex items-center gap-2 text-sm text-navy">
-                    <CheckCircle size={16} className="text-teal flex-shrink-0" />
-                    {c}
-                  </div>
-                ))}
-              </div>
+
               <Link to="/services/seniors" className="btn-primary">
                 Learn More <ArrowRight size={18} />
               </Link>
@@ -114,13 +117,14 @@ export default function FeatureBlocks() {
       {/* --- WOMEN'S HEALTH BLOCK --- */}
       <section className="py-20 bg-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Text */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
+              className="lg:sticky lg:top-24"
             >
               <SectionLabel>Women's Health</SectionLabel>
               <h2 className="section-heading text-3xl md:text-4xl mt-2 mb-4 text-navy">
@@ -155,6 +159,28 @@ export default function FeatureBlocks() {
                 </div>
               </div>
 
+              {/* Treats card */}
+              <div className="rounded-3xl overflow-hidden mb-6"
+                style={{ background: 'linear-gradient(135deg, #1B2F5E, #1A7F8E)' }}
+              >
+                <div className="p-8 text-white">
+                  <div className="text-gold text-sm font-semibold uppercase tracking-wider mb-4">Treats</div>
+                  <div className="space-y-3 mb-6">
+                    {['Diastasis Recti', 'Back Pain', 'Pelvic Floor Weakness', 'Postnatal Recovery', 'Prenatal Fitness'].map((c) => (
+                      <div key={c} className="flex items-center gap-3 text-sm">
+                        <CheckCircle size={16} className="text-teal flex-shrink-0" />
+                        <span>{c}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-white/10 pt-5">
+                    <div className="text-white/60 text-xs mb-2">Your Expert</div>
+                    <div className="font-display font-semibold text-white">Dr. Neha Trivedi</div>
+                    <div className="text-white/60 text-sm">MPT • Trained in Prenatal & Postnatal Pilates</div>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex flex-wrap items-center gap-4">
                 <Link to="/services/womens-health" className="btn-primary">
                   Learn More <ArrowRight size={18} />
@@ -178,32 +204,12 @@ export default function FeatureBlocks() {
                 src={images.womensHealth}
                 alt="Postnatal recovery and core activation exercise"
                 loading="lazy"
-                className="w-full rounded-2xl shadow-lg mb-6"
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                className="w-full rounded-2xl shadow-lg"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7 }}
               />
-              <div className="rounded-3xl overflow-hidden"
-                style={{ background: 'linear-gradient(135deg, #1B2F5E, #1A7F8E)' }}
-              >
-                <div className="p-8 text-white">
-                  <div className="text-gold text-sm font-semibold uppercase tracking-wider mb-4">Treats</div>
-                  <div className="space-y-3 mb-6">
-                    {['Diastasis Recti', 'Back Pain', 'Pelvic Floor Weakness', 'Postnatal Recovery', 'Prenatal Fitness'].map((c) => (
-                      <div key={c} className="flex items-center gap-3 text-sm">
-                        <CheckCircle size={16} className="text-teal flex-shrink-0" />
-                        <span>{c}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t border-white/10 pt-5">
-                    <div className="text-white/60 text-xs mb-2">Your Expert</div>
-                    <div className="font-display font-semibold text-white">Dr. Neha Trivedi</div>
-                    <div className="text-white/60 text-sm">MPT • Trained in Prenatal & Postnatal Pilates</div>
-                  </div>
-                </div>
-              </div>
             </motion.div>
           </div>
         </div>
@@ -212,7 +218,7 @@ export default function FeatureBlocks() {
       {/* --- PAIN MANAGEMENT BLOCK --- */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Visual */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -225,13 +231,42 @@ export default function FeatureBlocks() {
                 src={images.painManagement}
                 alt="Specialized neck and shoulder pain therapy"
                 loading="lazy"
-                className="w-full rounded-2xl shadow-lg mb-6"
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                className="w-full rounded-2xl shadow-lg"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7 }}
               />
-              <div className="bg-light rounded-3xl p-8">
+            </motion.div>
+            {/* Text */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="order-1 lg:order-2 lg:sticky lg:top-24"
+            >
+              <SectionLabel>Pain Management</SectionLabel>
+              <h2 className="section-heading text-3xl md:text-4xl mt-2 mb-4 text-navy">
+                Still Struggling with Back Pain, Neck Pain, or Shoulder Pain?
+              </h2>
+              <p className="text-orange font-semibold text-lg mb-4">
+                Stop just relieving the pain — treat the cause.
+              </p>
+              <p className="text-muted leading-relaxed mb-5">
+                Regular exercises not helping? You need a specialized program designed specifically for <em>you</em>.
+                Our approach starts with a thorough assessment, not a generic exercise sheet.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {['Specialized Assessment', 'Supervised Exercise', 'Personalized Program', 'Long-term Results'].map((c) => (
+                  <div key={c} className="flex items-center gap-2 text-sm text-navy">
+                    <CheckCircle size={16} className="text-teal flex-shrink-0" /> {c}
+                  </div>
+                ))}
+              </div>
+
+              {/* Results card */}
+              <div className="bg-light rounded-3xl p-8 mb-6">
                 <div className="text-teal text-sm font-semibold uppercase tracking-wider mb-5">Results We Deliver</div>
                 <div className="space-y-4">
                   {[
@@ -253,33 +288,7 @@ export default function FeatureBlocks() {
                   ))}
                 </div>
               </div>
-            </motion.div>
-            {/* Text */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-              className="order-1 lg:order-2"
-            >
-              <SectionLabel>Pain Management</SectionLabel>
-              <h2 className="section-heading text-3xl md:text-4xl mt-2 mb-4 text-navy">
-                Still Struggling with Back Pain, Neck Pain, or Shoulder Pain?
-              </h2>
-              <p className="text-orange font-semibold text-lg mb-4">
-                Stop just relieving the pain — treat the cause.
-              </p>
-              <p className="text-muted leading-relaxed mb-5">
-                Regular exercises not helping? You need a specialized program designed specifically for <em>you</em>.
-                Our approach starts with a thorough assessment, not a generic exercise sheet.
-              </p>
-              <div className="grid grid-cols-2 gap-3 mb-8">
-                {['Specialized Assessment', 'Supervised Exercise', 'Personalized Program', 'Long-term Results'].map((c) => (
-                  <div key={c} className="flex items-center gap-2 text-sm text-navy">
-                    <CheckCircle size={16} className="text-teal flex-shrink-0" /> {c}
-                  </div>
-                ))}
-              </div>
+
               <Link to="/services/pain-management" className="btn-primary">
                 Get Assessed <ArrowRight size={18} />
               </Link>
