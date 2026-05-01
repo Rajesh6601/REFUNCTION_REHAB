@@ -113,6 +113,13 @@ router.get('/:id', async (req, res) => {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
+        packages: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            payment: { select: { receiptNo: true, totalAmount: true, amountPaid: true } },
+            _count:  { select: { visits: true } },
+          },
+        },
       },
     })
     if (!patient) return res.status(404).json({ error: 'Patient not found' })

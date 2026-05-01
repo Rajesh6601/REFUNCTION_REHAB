@@ -23,6 +23,8 @@ router.get('/dashboard', async (req, res) => {
       patientsWithNoPayments,
       recentEnrollments,
       recentPayments,
+      activePackages,
+      visitsToday,
     ] = await Promise.all([
       prisma.patient.count(),
       prisma.patient.count({ where: { enrolledAt: { gte: todayStart } } }),
@@ -59,7 +61,29 @@ router.get('/dashboard', async (req, res) => {
         take: 10,
         include: { patient: { select: { fullName: true } } },
       }),
+      prisma.treatmentPackage.count({ where: { status: 'active' } }),
+      prisma.patientVisit.count({ where: { visitDate: { gte: todayStart } } }),
     ])
+
+    // Packages needing attention: active with <=2 sessions remaining
+    const activePackagesWithCounts = await prisma.treatmentPackage.findMany({
+      where: { status: 'active' },
+      include: {
+        patient: { select: { id: true, fullName: true } },
+        _count:  { select: { visits: true } },
+      },
+    })
+    const attentionPackages = activePackagesWithCounts
+      .filter(p => (p.totalSessions - p._count.visits) <= 2)
+      .map(p => ({
+        id:             p.id,
+        patientId:      p.patient.id,
+        patientName:    p.patient.fullName,
+        packageName:    p.packageName,
+        totalSessions:  p.totalSessions,
+        sessionsUsed:   p._count.visits,
+        remaining:      p.totalSessions - p._count.visits,
+      }))
 
     // Payment mode breakdown
     const modeBreakdown = await prisma.payment.groupBy({
@@ -82,6 +106,9 @@ router.get('/dashboard', async (req, res) => {
       recentEnrollments,
       recentPayments,
       paymentModeBreakdown: modeBreakdown,
+      activePackages,
+      visitsToday,
+      attentionPackages,
     })
   } catch (err) {
     console.error('[admin dashboard]', err)
@@ -126,6 +153,14 @@ router.get('/patients', async (req, res) => {
           id: true, fullName: true, mobile: true, age: true, gender: true,
           program: true, sessionType: true, city: true, enrolledAt: true,
           _count: { select: { payments: true } },
+          packages: {
+            where: { status: 'active' },
+            take: 3,
+            select: {
+              id: true, packageName: true, totalSessions: true, status: true,
+              _count: { select: { visits: true } },
+            },
+          },
         },
       }),
       prisma.patient.count({ where }),

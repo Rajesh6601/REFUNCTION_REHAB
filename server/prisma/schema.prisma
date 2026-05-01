@@ -46,6 +46,7 @@ model Patient {
   signature         String?
   enrolledAt        DateTime  @default(now())
   payments          Payment[]
+  packages          TreatmentPackage[]
 
   @@map("patients")
 }
@@ -76,6 +77,7 @@ model Payment {
   patientSignature String?
   authorisedBy     String?
   createdAt        DateTime @default(now())
+  package          TreatmentPackage?
 
   @@map("payments")
 }
@@ -123,4 +125,36 @@ model Testimonial {
   updatedAt         DateTime @updatedAt
 
   @@map("testimonials")
+}
+
+model TreatmentPackage {
+  id            String         @id @default(cuid())
+  patientId     String
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  paymentId     String         @unique
+  payment       Payment        @relation(fields: [paymentId], references: [id])
+  packageName   String
+  totalSessions Int
+  startDate     DateTime       @default(now())
+  expiryDate    DateTime?
+  status        String         @default("active")
+  notes         String?
+  visits        PatientVisit[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("treatment_packages")
+}
+
+model PatientVisit {
+  id             String           @id @default(cuid())
+  packageId      String
+  package        TreatmentPackage @relation(fields: [packageId], references: [id])
+  visitDate      DateTime         @default(now())
+  visitNumber    Int
+  treatmentNotes String?
+  markedBy       String?
+  createdAt      DateTime         @default(now())
+
+  @@map("patient_visits")
 }

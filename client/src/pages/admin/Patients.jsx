@@ -95,7 +95,7 @@ export default function AdminPatients() {
           <table className="w-full text-sm">
             <thead className="bg-light border-b border-gray-100">
               <tr>
-                {['Patient ID', 'Name', 'Age/Gender', 'Mobile', 'Program', 'Session', 'City', 'Enrolled', 'Payments', 'Actions'].map((h) => (
+                {['Patient ID', 'Name', 'Age/Gender', 'Mobile', 'Program', 'Session', 'City', 'Enrolled', 'Payments', 'Pkg Status', 'Actions'].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
@@ -104,9 +104,9 @@ export default function AdminPatients() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={10} className="text-center py-16 text-muted">Loading…</td></tr>
+                <tr><td colSpan={11} className="text-center py-16 text-muted">Loading…</td></tr>
               ) : data.patients.length === 0 ? (
-                <tr><td colSpan={10} className="text-center py-16 text-muted">No patients found</td></tr>
+                <tr><td colSpan={11} className="text-center py-16 text-muted">No patients found</td></tr>
               ) : data.patients.map((p) => (
                 <tr key={p.id} className="border-b border-gray-50 hover:bg-light transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-muted">{p.id}</td>
@@ -135,6 +135,20 @@ export default function AdminPatients() {
                         No payment
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {(() => {
+                      const activePkg = p.packages?.[0]
+                      if (!activePkg) return (
+                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">No package</span>
+                      )
+                      const done = activePkg._count?.visits ?? 0
+                      return (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                          Active ({done}/{activePkg.totalSessions})
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">

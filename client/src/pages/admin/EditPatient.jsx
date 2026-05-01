@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Package, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
-import { getPatient, updatePatient } from '../../lib/api'
+import { getPatient, updatePatient, getPatientPackages, recordVisit, deleteVisit } from '../../lib/api'
 
 const PROGRAMS   = ['Physiotherapy', 'General Health & Fitness', 'Kids Exercise', 'Post-Surgery Rehab', 'Sports Injury', 'Elderly Care', 'Other']
 const DAYS       = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -37,6 +37,27 @@ export default function EditPatient() {
   const [loading, setLoading]       = useState(true)
   const [saving, setSaving]         = useState(false)
   const [error, setError]           = useState('')
+
+  // Package state
+  const [packages, setPackages]       = useState([])
+  const [pkgLoading, setPkgLoading]   = useState(false)
+  const [expandedPkg, setExpandedPkg] = useState(null)
+  const [visitForm, setVisitForm]     = useState(null) // packageId being marked
+  const [visitDate, setVisitDate]     = useState(new Date().toISOString().split('T')[0])
+  const [visitNotes, setVisitNotes]   = useState('')
+  const [visitSaving, setVisitSaving] = useState(false)
+
+  const fetchPackages = async () => {
+    setPkgLoading(true)
+    try {
+      const res = await getPatientPackages(id)
+      // Sort: active first, then completed, then expired
+      const order = { active: 0, completed: 1, expired: 2 }
+      const sorted = [...res.data].sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3))
+      setPackages(sorted)
+    } catch { /* ignore */ }
+    finally { setPkgLoading(false) }
+  }
 
   useEffect(() => {
     ;(async () => {
@@ -76,12 +97,38 @@ export default function EditPatient() {
         setLoading(false)
       }
     })()
-  }, [id])
+    fetchPackages()
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
   const toggleArr = (arr, setArr, val) =>
     setArr(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val])
+
+  const handleMarkVisit = async (pkgId) => {
+    setVisitSaving(true)
+    try {
+      await recordVisit(pkgId, { visitDate, treatmentNotes: visitNotes })
+      setVisitForm(null)
+      setVisitNotes('')
+      setVisitDate(new Date().toISOString().split('T')[0])
+      await fetchPackages()
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to record visit')
+    } finally {
+      setVisitSaving(false)
+    }
+  }
+
+  const handleDeleteVisit = async (pkgId, visitId) => {
+    if (!window.confirm('Delete this visit?')) return
+    try {
+      await deleteVisit(pkgId, visitId)
+      await fetchPackages()
+    } catch {
+      alert('Failed to delete visit')
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -328,6 +375,187 @@ export default function EditPatient() {
             </button>
           </div>
         </form>
+
+        {/* Packages & Visits */}
+        <div className="card p-8 mt-5">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-display font-bold text-xl text-navy flex items-center gap-2">
+              <Package size={22} className="text-teal" /> Packages & Visits
+            </h2>
+            <Link to={`/payment?patientId=${id}`} className="btn-teal text-sm py-2 px-4">
+              <Plus size={15} /> New Package
+            </Link>
+          </div>
+
+          {pkgLoading ? (
+            <p className="text-muted text-sm text-center py-8">Loading packages...</p>
+          ) : packages.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-muted text-sm mb-3">No treatment packages yet.</p>
+              <Link to={`/payment?patientId=${id}`} className="text-teal text-sm font-medium hover:underline">
+                Create a package via Payment page
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {packages.map((pkg) => {
+                const visitsDone = pkg._count?.visits ?? pkg.visits?.length ?? 0
+                const remaining  = pkg.totalSessions - visitsDone
+                const pct        = pkg.totalSessions > 0 ? Math.round((visitsDone / pkg.totalSessions) * 100) : 0
+                const isExpanded = expandedPkg === pkg.id
+                const statusColor = pkg.status === 'active' ? 'bg-green-100 text-green-700'
+                  : pkg.status === 'completed' ? 'bg-blue-100 text-blue-700'
+                  : 'bg-red-100 text-red-700'
+
+                return (
+                  <div key={pkg.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                    {/* Package header */}
+                    <div
+                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-light transition-colors"
+                      onClick={() => setExpandedPkg(isExpanded ? null : pkg.id)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div>
+                          <div className="font-semibold text-navy text-sm flex items-center gap-2">
+                            {pkg.packageName}
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
+                              {pkg.status}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted mt-0.5">
+                            {visitsDone} / {pkg.totalSessions} sessions
+                            {pkg.payment?.receiptNo && <> &middot; {pkg.payment.receiptNo}</>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {pkg.status === 'active' && remaining <= 2 && remaining > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                            <AlertTriangle size={12} /> {remaining} left
+                          </span>
+                        )}
+                        {/* Progress bar */}
+                        <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              pkg.status === 'completed' ? 'bg-blue-500' :
+                              pkg.status === 'expired' ? 'bg-red-400' : 'bg-teal'
+                            }`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        {isExpanded ? <ChevronUp size={16} className="text-muted" /> : <ChevronDown size={16} className="text-muted" />}
+                      </div>
+                    </div>
+
+                    {/* Expanded detail */}
+                    {isExpanded && (
+                      <div className="border-t border-gray-100 p-4 bg-light/50">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-4">
+                          <div>
+                            <span className="text-muted text-xs">Start Date</span>
+                            <div className="font-medium text-navy">{new Date(pkg.startDate).toLocaleDateString('en-IN')}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted text-xs">Expiry</span>
+                            <div className="font-medium text-navy">{pkg.expiryDate ? new Date(pkg.expiryDate).toLocaleDateString('en-IN') : 'None'}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted text-xs">Remaining</span>
+                            <div className="font-medium text-navy">{remaining} sessions</div>
+                          </div>
+                          <div>
+                            <span className="text-muted text-xs">Receipt</span>
+                            <div className="font-medium text-navy">{pkg.payment?.receiptNo || '—'}</div>
+                          </div>
+                        </div>
+
+                        {/* Mark Visit button (active only) */}
+                        {pkg.status === 'active' && (
+                          <div className="mb-4">
+                            {visitForm === pkg.id ? (
+                              <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-3">
+                                <div className="grid sm:grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="form-label text-xs">Visit Date</label>
+                                    <input type="date" className="input-field text-sm" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
+                                  </div>
+                                  <div>
+                                    <label className="form-label text-xs">Treatment Notes</label>
+                                    <input className="input-field text-sm" placeholder="Notes..." value={visitNotes} onChange={(e) => setVisitNotes(e.target.value)} />
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={visitSaving}
+                                    onClick={() => handleMarkVisit(pkg.id)}
+                                    className="btn-teal text-xs py-2 px-3 disabled:opacity-60"
+                                  >
+                                    {visitSaving ? 'Saving...' : 'Confirm Visit'}
+                                  </button>
+                                  <button type="button" onClick={() => setVisitForm(null)} className="btn-outline text-xs py-2 px-3">
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setVisitForm(pkg.id)}
+                                className="btn-teal text-xs py-2 px-3"
+                              >
+                                <Plus size={14} /> Mark Visit
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Visit log table */}
+                        {pkg.visits && pkg.visits.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="text-xs text-muted uppercase border-b border-gray-200">
+                                  <th className="text-left py-2 pr-3">Visit #</th>
+                                  <th className="text-left py-2 pr-3">Date</th>
+                                  <th className="text-left py-2 pr-3">Notes</th>
+                                  <th className="text-left py-2 pr-3">Marked By</th>
+                                  <th className="py-2 w-10"></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {pkg.visits.map((v) => (
+                                  <tr key={v.id} className="border-b border-gray-100">
+                                    <td className="py-2 pr-3 font-medium text-navy">{v.visitNumber}</td>
+                                    <td className="py-2 pr-3 text-muted">{new Date(v.visitDate).toLocaleDateString('en-IN')}</td>
+                                    <td className="py-2 pr-3 text-muted">{v.treatmentNotes || '—'}</td>
+                                    <td className="py-2 pr-3 text-muted">{v.markedBy || '—'}</td>
+                                    <td className="py-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteVisit(pkg.id, v.id)}
+                                        className="text-red-400 hover:text-red-600 transition-colors"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="text-muted text-xs text-center py-4">No visits recorded yet</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </AdminLayout>
   )

@@ -57,6 +57,13 @@ export const getAdminPayments= (params) => api.get('/admin/payments',  { params 
 export const exportPatients  = ()       => api.get('/admin/patients/export', { responseType: 'blob' })
 export const exportPayments  = ()       => api.get('/admin/payments/export',  { responseType: 'blob' })
 
+// ─── Packages & Visits ──────────────────────────────────────────────────────
+export const getPatientPackages = (patientId) => api.get('/admin/packages', { params: { patientId } })
+export const getPackageDetails  = (id)        => api.get(`/admin/packages/${id}`)
+export const updatePackage      = (id, data)  => api.patch(`/admin/packages/${id}`, data)
+export const recordVisit        = (pkgId, data) => api.post(`/admin/packages/${pkgId}/visits`, data)
+export const deleteVisit        = (pkgId, visitId) => api.delete(`/admin/packages/${pkgId}/visits/${visitId}`)
+
 // ─── Testimonials (Public) ──────────────────────────────────────────────────
 export const getTestimonials        = (params) => api.get('/testimonials', { params })
 export const getTestimonial         = (id)     => api.get(`/testimonials/${id}`)

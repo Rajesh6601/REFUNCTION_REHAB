@@ -17,6 +17,8 @@ router.post('/', async (req, res) => {
       services, subTotal, gst, totalAmount, amountPaid,
       balanceDue, advancePaid, paymentMode, paymentDate, transactionId,
       paymentDetails, status, remarks, collectedBy, authorisedBy,
+      // Package fields
+      isPackage, packageName, totalSessions, expiryDate, packageNotes,
     } = req.body
 
     if (!patientId || !totalAmount || !amountPaid || !paymentMode) {
@@ -26,37 +28,66 @@ router.post('/', async (req, res) => {
     const patient = await prisma.patient.findUnique({ where: { id: patientId } })
     if (!patient) return res.status(404).json({ error: 'Patient not found' })
 
-    const payment = await prisma.payment.create({
-      data: {
-        receiptNo:       generateReceiptNo(),
-        patientId,
-        sessionNo:       sessionNo ? parseInt(sessionNo) : null,
-        sessionDate:     sessionDate ? new Date(sessionDate) : new Date(),
-        sessionDuration: sessionDuration || null,
-        services:        services || [],
-        subTotal:        parseFloat(subTotal) || 0,
-        gst:             parseFloat(gst) || 0,
-        totalAmount:     parseFloat(totalAmount),
-        amountPaid:      parseFloat(amountPaid),
-        balanceDue:      parseFloat(balanceDue) || 0,
-        advancePaid:     parseFloat(advancePaid) || 0,
-        paymentMode,
-        paymentDate:     paymentDate ? new Date(paymentDate) : new Date(),
-        transactionId:   transactionId || null,
-        paymentDetails:  paymentDetails || null,
-        status:          status || 'paid',
-        remarks:         remarks || null,
-        collectedBy:     collectedBy || 'Staff',
-        authorisedBy:    authorisedBy || null,
-      },
-      include: { patient: { select: { fullName: true, mobile: true } } },
-    })
+    const paymentData = {
+      receiptNo:       generateReceiptNo(),
+      patientId,
+      sessionNo:       sessionNo ? parseInt(sessionNo) : null,
+      sessionDate:     sessionDate ? new Date(sessionDate) : new Date(),
+      sessionDuration: sessionDuration || null,
+      services:        services || [],
+      subTotal:        parseFloat(subTotal) || 0,
+      gst:             parseFloat(gst) || 0,
+      totalAmount:     parseFloat(totalAmount),
+      amountPaid:      parseFloat(amountPaid),
+      balanceDue:      parseFloat(balanceDue) || 0,
+      advancePaid:     parseFloat(advancePaid) || 0,
+      paymentMode,
+      paymentDate:     paymentDate ? new Date(paymentDate) : new Date(),
+      transactionId:   transactionId || null,
+      paymentDetails:  paymentDetails || null,
+      status:          status || 'paid',
+      remarks:         remarks || null,
+      collectedBy:     collectedBy || 'Staff',
+      authorisedBy:    authorisedBy || null,
+    }
+
+    let payment, treatmentPackage
+
+    if (isPackage && packageName && totalSessions) {
+      // Create payment + package atomically
+      const result = await prisma.$transaction(async (tx) => {
+        const p = await tx.payment.create({
+          data: paymentData,
+          include: { patient: { select: { fullName: true, mobile: true } } },
+        })
+        const pkg = await tx.treatmentPackage.create({
+          data: {
+            patientId,
+            paymentId:     p.id,
+            packageName,
+            totalSessions: parseInt(totalSessions),
+            startDate:     new Date(),
+            expiryDate:    expiryDate ? new Date(expiryDate) : null,
+            notes:         packageNotes || null,
+          },
+        })
+        return { payment: p, package: pkg }
+      })
+      payment = result.payment
+      treatmentPackage = result.package
+    } else {
+      payment = await prisma.payment.create({
+        data: paymentData,
+        include: { patient: { select: { fullName: true, mobile: true } } },
+      })
+    }
 
     res.status(201).json({
       message:   'Payment recorded successfully',
       paymentId: payment.id,
       receiptNo: payment.receiptNo,
       payment,
+      ...(treatmentPackage && { package: treatmentPackage }),
     })
   } catch (err) {
     console.error('[payments POST]', err)

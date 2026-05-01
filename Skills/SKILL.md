@@ -423,7 +423,8 @@ Based on the Patient Payment Collection Form PDF:
 - Session Visit Number, Session Date, Duration
 - Service type checkboxes: Initial Consultation, Follow-up, Physiotherapy Session, Exercise Training, Kids Exercise, Post-Surgery Rehab, Sports Injury, Elderly Care, Home Visit, Group Session, Online Session, Other
 - Fee Breakdown table: Service Description | Qty | Unit Rate (₹) | Discount (₹) | Amount (₹)
-- Sub Total, GST (if applicable), **TOTAL AMOUNT PAYABLE** (large, bold)
+- Default rate: ₹600 per session
+- Sub Total, GST (if applicable), Package Discount (if applicable, shown in green), **TOTAL AMOUNT PAYABLE** (large, bold)
 
 **Section 3 — Payment Mode**
 Dynamic form sections (show/hide based on selection):
@@ -488,9 +489,18 @@ PATCH  /api/patients/:id            → Update patient details (implemented, req
 
 # Payments
 POST   /api/payments                → Save to Payment table, return { paymentId, receiptNo }
+                                      Optional package fields: isPackage, packageName, totalSessions, expiryDate, packageNotes
+                                      When isPackage=true, atomically creates Payment + TreatmentPackage via $transaction()
 GET    /api/payments/:id            → Get payment record by ID
 GET    /api/payments/receipt/:id    → Generate and return PDF receipt
 GET    /api/payments/patient/:id    → All payments for a specific patient
+
+# Packages & Visits (all protected — require valid JWT)
+GET    /api/admin/packages?patientId={id} → List all packages for a patient (with visit counts & visits)
+GET    /api/admin/packages/:id            → Get package details with all visits, patient, and payment info
+PATCH  /api/admin/packages/:id            → Update package (status, notes, expiryDate, packageName)
+POST   /api/admin/packages/:id/visits     → Record a visit (auto-increments visitNumber, auto-completes on last session)
+DELETE /api/admin/packages/:id/visits/:visitId → Remove a visit (re-numbers remaining, reverts completed→active)
 
 # Contact Inquiries
 POST   /api/contact                 → Save to ContactInquiry table, notify admin via email
@@ -510,7 +520,10 @@ GET    /api/admin/dashboard         → {
                                         pendingPayments,
                                         recentEnrollments[],
                                         recentPayments[],
-                                        paymentModeBreakdown{}
+                                        paymentModeBreakdown{},
+                                        activePackages,
+                                        visitsToday,
+                                        attentionPackages[]
                                       }
 GET    /api/admin/patients          → Paginated patient list (page, limit, search, program filter, date range)
 GET    /api/admin/payments          → Paginated payment records (page, limit, status filter, date range)
@@ -569,6 +582,7 @@ model Patient {
   signature         String?   // base64 or URL
   enrolledAt        DateTime  @default(now())
   payments          Payment[]
+  packages          TreatmentPackage[]
 }
 
 model Payment {
@@ -596,6 +610,7 @@ model Payment {
   patientSignature String?
   authorisedBy     String?
   createdAt        DateTime @default(now())
+  package          TreatmentPackage?   // optional one-to-one: a payment may create a package
 }
 
 model ContactInquiry {
@@ -789,7 +804,7 @@ refunction-rehab/
 │   │   │       ├── Payments.jsx
 │   │   │       └── Testimonials.jsx  # Admin testimonial management
 │   │   ├── hooks/           # usePatient, usePayment, useAuth
-│   │   └── lib/             # api.js (axios instance), validators.js
+│   │   └── lib/             # api.js (axios instance + package/visit API functions), validators.js
 │
 ├── server/                  # Node + Express backend
 │   ├── Dockerfile           # node:20-alpine, runs prisma migrate deploy on start
@@ -797,6 +812,7 @@ refunction-rehab/
 │   ├── routes/
 │   │   ├── patients.js
 │   │   ├── payments.js
+│   │   ├── packages.js       # Treatment package CRUD + visit recording
 │   │   ├── contact.js
 │   │   ├── auth.js
 │   │   └── admin.js
@@ -846,13 +862,18 @@ When building this app from scratch, follow this order:
 - All `/admin/*` routes are protected — redirect to `/admin/login` if no valid JWT
 
 ### 13.2 Dashboard Home (`/admin/dashboard`)
-**Stat Cards Row:**
+**Stat Cards Row** (4-column grid, 2 rows of 4):
 - Total Patients Enrolled (all time)
 - New Patients Today
 - New Patients This Month
 - Total Revenue (all time, ₹)
 - Revenue Today (₹)
 - Pending Payments (count + ₹ value) — **must include** patients who enrolled but have zero payment records (not just payments with `partial`/`pending` status). Count = patients with no payments + payment records in `partial`/`pending` status.
+- Active Packages (count of packages with `status: "active"`)
+- Visits Today (count of visits recorded today)
+
+**Packages Needing Attention** (shown only when packages have ≤2 sessions remaining):
+- Table: Patient Name | Package | Sessions Used | Remaining | Action (View link to patient profile)
 
 **Recent Enrollments Table** (last 10):
 - Patient Name | Program | Session Type | Enrolled At | Actions (View)
@@ -866,8 +887,9 @@ When building this app from scratch, follow this order:
 ### 13.3 Patients Page (`/admin/patients`)
 - Search bar (name / phone / patient ID)
 - Filter: Program type, Enrollment date range
-- Paginated table: ID | Name | Age | Gender | Mobile | Program | Session Type | Enrolled At | Payment Status | Actions
+- Paginated table: ID | Name | Age | Gender | Mobile | Program | Session Type | Enrolled At | Payment Status | Pkg Status | Actions
 - **Payment Status column**: Show a badge per patient — green "X paid" if they have payment records, amber "No payment" if they have zero payment records. This gives staff immediate visibility into who has enrolled but not yet paid.
+- **Pkg Status column**: Shows the patient's active package progress — green "Active (4/10)" badge for active packages, or grey "No package" if none. Data comes from the `packages` field returned by the admin patients query (active packages only, with visit counts).
 - Actions: **Edit** (links to `/admin/patients/:id/edit` — implemented), View full profile, Download enrollment card, **Record Payment** (links to `/payment?patientId={id}` for quick deferred payment recording)
 - **Export to CSV** button (calls `GET /api/admin/patients/export`)
 - Total count shown: "Showing X of Y patients"
@@ -1003,3 +1025,210 @@ Protected page for Dr. Neha / staff to manage testimonials.
 Each service detail page should show 1–2 relevant testimonials at the bottom (above the CTA banner), filtered by the service slug. This gives contextual social proof — a patient viewing "Physiotherapy for Seniors" sees testimonials from other seniors.
 
 **Implementation:** Filter from `GET /api/testimonials?service={slug}&limit=2&featured=true`
+
+---
+
+## 16. Patient Visit Tracking & Package Management
+
+Track the number of visits a patient has completed against their purchased treatment package. This helps Dr. Neha know exactly where each patient stands — how many sessions are done, how many remain, and when a renewal is due.
+
+**Integration philosophy:** This feature is NOT a standalone system. It plugs into the existing Patient, Payment, and Dashboard modules — a package is born from a Payment, visits are tracked inside the existing patient profile page, and stats appear on the existing dashboard.
+
+### 16.1 Why This Matters
+
+- **For the doctor/clinic:** Quick visibility into each patient's attendance, avoids over- or under-servicing, and enables timely package renewal conversations.
+- **For the patient:** Transparency on sessions used vs. remaining — no confusion or disputes.
+
+### 16.2 Package & Visit Data Model
+
+Add to the Prisma schema (Section 6). The `TreatmentPackage` links to both `Patient` and `Payment` — no duplicate amount/patient fields.
+
+```prisma
+model TreatmentPackage {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  paymentId     String
+  payment       Payment  @relation(fields: [paymentId], references: [id])
+  packageName   String            // e.g., "10-Day Physiotherapy Package"
+  totalSessions Int               // e.g., 10
+  startDate     DateTime @default(now())
+  expiryDate    DateTime?         // optional — package validity window
+  status        String   @default("active") // active | completed | expired
+  notes         String?
+  visits        PatientVisit[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("treatment_packages")
+}
+
+model PatientVisit {
+  id             String   @id @default(cuid())
+  packageId      String
+  package        TreatmentPackage @relation(fields: [packageId], references: [id])
+  visitDate      DateTime @default(now())
+  visitNumber    Int               // 1, 2, 3, ... auto-incremented per package
+  treatmentNotes String?           // what was done in this session
+  markedBy       String?           // staff who recorded the visit
+  createdAt      DateTime @default(now())
+
+  @@map("patient_visits")
+}
+```
+
+**Required relation updates to existing models (Section 6):**
+
+```prisma
+// Add to existing Patient model:
+model Patient {
+  // ... existing fields ...
+  payments          Payment[]
+  packages          TreatmentPackage[]   // ← NEW
+}
+
+// Add to existing Payment model:
+model Payment {
+  // ... existing fields ...
+  package           TreatmentPackage?    // ← NEW (one-to-one: a payment may or may not create a package)
+}
+```
+
+### 16.3 Integration with Payment Form (`/payment`)
+
+The existing Payment page (Section 4.5 / `Payment.jsx`) gets a **package toggle** — no separate package creation page needed.
+
+#### Changes to Payment Form
+
+**Default session rate:** ₹600 per session (applies to initial line item and newly added service lines).
+
+After the **Service Details** section, add:
+
+- **"Package Payment"** toggle with teal icon (default: off)
+- When toggled ON:
+  - The first line item's **quantity auto-syncs** to the selected session count (e.g., selecting 10-Session Package sets qty=10, so total becomes 10 × ₹600 = ₹6,000)
+  - Reveal package-specific fields:
+    - **Package Type** — dropdown of common presets:
+      - 5-Session Package (qty → 5)
+      - 10-Session Package (qty → 10)
+      - 15-Session Package (qty → 15)
+      - Monthly Unlimited (qty → 30)
+      - Custom (manual qty entry)
+    - **Total Sessions** — number input (auto-filled from preset, editable; also syncs line item qty)
+    - **Package Discount (₹)** — flat discount amount subtracted from the total (e.g., ₹6,000 - ₹1,000 discount = ₹5,000). Shown as a green "Package Discount -₹X" line in the totals breakdown. Resets to 0 when toggle is turned off.
+    - **Expiry Date** — optional date picker (package validity window)
+    - **Package Notes** — optional text
+- When toggled OFF, line item qty resets to 1 and package discount resets to 0
+- On payment submission (`POST /api/payments`), if the package toggle is ON, the backend **automatically creates a `TreatmentPackage`** linked to the new payment record using `prisma.$transaction()`. No separate API call needed from the frontend.
+
+#### Totals Breakdown (when package is active with discount)
+
+```
+Subtotal                    ₹6,000
+GST (if applicable)         ₹0
+Package Discount            -₹1,000    ← green text, only shown when discount > 0
+─────────────────────────────────────
+TOTAL                       ₹5,000
+```
+
+#### Flow Example
+
+1. Patient RF-0012 comes in, wants a 10-session package for ₹6,000 with ₹1,000 discount
+2. Staff opens `/payment?patientId=RF-0012`
+3. Toggles ON **"Package Payment"**
+4. Selects preset "10-Session Package" → totalSessions auto-fills to 10, line item qty auto-updates to 10, subtotal shows ₹6,000
+5. Enters Package Discount: ₹1,000 → total updates to ₹5,000
+6. Clicks **Save Record**
+7. Backend creates the Payment (₹5,000) AND the TreatmentPackage (10 sessions) in one atomic transaction
+
+### 16.4 API Routes
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET    | `/api/admin/packages?patientId={id}` | List all packages for a patient (with visit counts) |
+| GET    | `/api/admin/packages/:id` | Get package details with all visits |
+| PATCH  | `/api/admin/packages/:id` | Update package (status, notes, expiry) |
+| POST   | `/api/admin/packages/:id/visits` | Record a new visit (auto-increments visitNumber) |
+| DELETE | `/api/admin/packages/:id/visits/:visitId` | Remove a wrongly recorded visit |
+
+**Note:** There is no `POST /api/admin/packages` — packages are created automatically via the Payment route when the package toggle is ON. The existing `POST /api/payments` accepts optional package fields (`isPackage`, `packageName`, `totalSessions`, `expiryDate`, `packageNotes`) and handles both payment creation and package creation in a single atomic `prisma.$transaction()`.
+
+### 16.5 Integration with Patient Profile Page (`/admin/patients/:id`)
+
+The existing patient detail/edit page gets a **new "Packages & Visits" tab/section** below the patient info. No separate admin page.
+
+#### Package Card (one per package)
+
+- **Header row:** Package name | Status badge: Active (green), Completed (blue), Expired (red)
+- **Progress bar:** `visitsDone / totalSessions` (e.g., "4 / 10 sessions completed")
+- **Details row:** Start date | Expiry date (if set) | Sessions remaining | Linked receipt no. (clickable → opens payment receipt)
+- **Alert banner** (amber) when only 1–2 sessions remaining: "⚠ 2 sessions remaining — discuss renewal with patient"
+- **Visit log table** under each package:
+  - Columns: Visit # | Date | Treatment Notes | Recorded By
+  - Sorted by visit number descending (most recent first)
+- **"Mark Visit" button** — primary action, opens quick-entry form:
+  - Date (defaults to today)
+  - Treatment notes (optional textarea)
+  - Click **Confirm** → `POST /api/admin/packages/:id/visits`
+  - On success, progress bar and visit log update immediately
+
+#### Multiple Packages View
+
+If a patient has multiple packages, show them as stacked cards sorted by status (active first, then completed, then expired). Each card is collapsible — active packages expanded by default, others collapsed.
+
+### 16.6 Integration with Admin Dashboard (`/admin/dashboard`)
+
+Add to the existing stat cards row (Section 13.2):
+
+- **Active Packages** — count of packages with `status: "active"` across all patients
+- **Visits Today** — count of visits recorded today (`visitDate = today`)
+
+Add a new section below the existing tables:
+
+- **Packages Needing Attention** — table of packages with ≤ 2 sessions remaining:
+  - Columns: Patient Name | Package | Sessions Used | Remaining | Last Visit Date
+  - Links to the patient profile page for quick action
+
+### 16.7 Integration with Patients List Page (`/admin/patients`)
+
+Add a new column to the existing patients table (Section 13.3):
+
+- **Package Status** column (after Payment Status):
+  - Green badge: "Active (4/10)" — shows active package with progress
+  - Blue badge: "Completed" — most recent package was completed
+  - Red badge: "Expired (3/10)" — package expired with unused sessions
+  - Grey text: "No package" — patient has no packages
+  - If multiple active packages, show count: "2 active"
+
+### 16.8 Quick Visit Entry (Dashboard Shortcut)
+
+Dr. Neha's most common action is recording that a patient showed up today. This should be fast and accessible from the dashboard:
+
+1. **"Mark Visit" quick-action button** on the dashboard (next to existing action buttons)
+2. Opens a modal:
+   - Patient search (by name, ID, or mobile) — same search as existing patient lookup
+   - Once selected, shows the patient's active package(s) with current progress
+   - Click **"Mark Visit"** on the relevant package — one click records today's visit
+   - Optional: add treatment notes before confirming
+3. Modal closes, dashboard "Visits Today" stat updates
+
+### 16.9 Business Rules
+
+- A patient can have **multiple packages** (e.g., one completed, one active)
+- A single payment creates **at most one** package (one-to-one relationship)
+- Visits cannot exceed `totalSessions` — once all sessions are used, status auto-updates to `completed`
+- If `expiryDate` is set and passes before all sessions are used, status auto-updates to `expired` (checked via a daily cron job or on-access check)
+- Only admin/staff can record or delete visits
+- Visit numbers are sequential per package (not global)
+- Package inherits patient and amount info from its linked Payment — no duplicate data entry
+- The `program` and `sessionType` from the Patient enrollment are used as defaults when displaying package context (e.g., "Physiotherapy — In-Person")
+
+### 16.10 Patient-Facing View (Optional Future Enhancement)
+
+On the patient's profile or a patient portal (if built), show a read-only view:
+
+- Package name and total sessions
+- Sessions completed and remaining
+- Dates of all past visits
+- Linked payment receipt for reference
+
