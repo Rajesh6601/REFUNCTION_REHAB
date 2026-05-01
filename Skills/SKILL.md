@@ -889,8 +889,8 @@ When building this app from scratch, follow this order:
 - Filter: Program type, Enrollment date range
 - Paginated table: ID | Name | Age | Gender | Mobile | Program | Session Type | Enrolled At | Payment Status | Pkg Status | Actions
 - **Payment Status column**: Show a badge per patient — green "X paid" if they have payment records, amber "No payment" if they have zero payment records. This gives staff immediate visibility into who has enrolled but not yet paid.
-- **Pkg Status column**: Shows the patient's active package progress — green "Active (4/10)" badge for active packages, or grey "No package" if none. Data comes from the `packages` field returned by the admin patients query (active packages only, with visit counts).
-- Actions: **Edit** (links to `/admin/patients/:id/edit` — implemented), View full profile, Download enrollment card, **Record Payment** (links to `/payment?patientId={id}` for quick deferred payment recording)
+- **Pkg Status column**: Shows the patient's active package progress — green "Active (4/10)" badge for active packages, or grey "No package" if none. **Clicking the badge opens the Packages & Visits modal** (see Section 16.7). Data comes from the `packages` field returned by the admin patients query (active packages only, with visit counts).
+- Actions: **Edit** (links to `/admin/patients/:id/edit` — implemented), **Visits** (opens Packages & Visits modal — same as clicking the Pkg Status badge), **Payment** (links to `/payment?patientId={id}` for quick deferred payment recording)
 - **Export to CSV** button (calls `GET /api/admin/patients/export`)
 - Total count shown: "Showing X of Y patients"
 
@@ -1153,28 +1153,9 @@ TOTAL                       ₹5,000
 
 **Note:** There is no `POST /api/admin/packages` — packages are created automatically via the Payment route when the package toggle is ON. The existing `POST /api/payments` accepts optional package fields (`isPackage`, `packageName`, `totalSessions`, `expiryDate`, `packageNotes`) and handles both payment creation and package creation in a single atomic `prisma.$transaction()`.
 
-### 16.5 Integration with Patient Profile Page (`/admin/patients/:id`)
+### 16.5 Patient Edit Page (`/admin/patients/:id/edit`)
 
-The existing patient detail/edit page gets a **new "Packages & Visits" tab/section** below the patient info. No separate admin page.
-
-#### Package Card (one per package)
-
-- **Header row:** Package name | Status badge: Active (green), Completed (blue), Expired (red)
-- **Progress bar:** `visitsDone / totalSessions` (e.g., "4 / 10 sessions completed")
-- **Details row:** Start date | Expiry date (if set) | Sessions remaining | Linked receipt no. (clickable → opens payment receipt)
-- **Alert banner** (amber) when only 1–2 sessions remaining: "⚠ 2 sessions remaining — discuss renewal with patient"
-- **Visit log table** under each package:
-  - Columns: Visit # | Date | Treatment Notes | Recorded By
-  - Sorted by visit number descending (most recent first)
-- **"Mark Visit" button** — primary action, opens quick-entry form:
-  - Date (defaults to today)
-  - Treatment notes (optional textarea)
-  - Click **Confirm** → `POST /api/admin/packages/:id/visits`
-  - On success, progress bar and visit log update immediately
-
-#### Multiple Packages View
-
-If a patient has multiple packages, show them as stacked cards sorted by status (active first, then completed, then expired). Each card is collapsible — active packages expanded by default, others collapsed.
+The patient edit page is focused purely on **editing patient enrollment details** (personal info, contact, program selection, goals). It does **not** include Packages & Visits — that functionality lives in the **Packages & Visits modal** on the Patients list page (Section 16.7), which provides a faster workflow for the doctor.
 
 ### 16.6 Integration with Admin Dashboard (`/admin/dashboard`)
 
@@ -1199,6 +1180,28 @@ Add a new column to the existing patients table (Section 13.3):
   - Red badge: "Expired (3/10)" — package expired with unused sessions
   - Grey text: "No package" — patient has no packages
   - If multiple active packages, show count: "2 active"
+
+#### Packages & Visits Modal (Quick Visit Entry)
+
+**Clicking the Pkg Status badge** or the **"Visits" action button** opens a full-featured modal overlay directly on the Patients list page. This is the **primary workflow for recording daily visits** — Dr. Neha never needs to navigate away from the patient list.
+
+**Modal layout:**
+- **Header:** Package icon + "Packages & Visits" title + patient name & ID + "New Package" button + close (X) button
+- **Body (scrollable):** All packages for the patient, sorted by status (active first, then completed, then expired)
+- Each package shown as a collapsible card (identical to the EditPatient packages section):
+  - Package name + status badge (green/blue/red) + session progress text + receipt number
+  - Progress bar showing `visitsDone / totalSessions`
+  - Amber alert when ≤2 sessions remaining
+  - Expanded detail: start date, expiry, remaining sessions, receipt number
+  - **"Mark Visit" button** (active packages only) → inline form with date + treatment notes + Confirm/Cancel
+  - Visit log table: Visit # | Date | Notes | Marked By | Delete action
+- **Empty state:** "No treatment packages yet" with link to create one via Payment page
+
+**UX benefits over the EditPatient page approach:**
+- **Zero navigation** — doctor stays on the patient list, clicks badge, records visit, closes modal
+- **Instant context switch** — can immediately move to the next patient without page loads
+- **Badge updates in real-time** — after recording a visit, both the modal progress bar and the patient list badge refresh automatically
+- **Consistent with clinical workflow** — doctor marks attendance at the start of each session while reviewing the patient list
 
 ### 16.8 Quick Visit Entry (Dashboard Shortcut)
 
