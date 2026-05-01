@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Users, IndianRupee, TrendingUp, Clock, UserPlus, AlertCircle, Package, CalendarCheck } from 'lucide-react'
+import { Users, IndianRupee, TrendingUp, Clock, UserPlus, AlertCircle, Package, CalendarCheck, ChevronLeft, ChevronRight } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getDashboard } from '../../lib/api'
 
@@ -28,17 +28,41 @@ function fmt(n) {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n || 0)
 }
 
-export default function Dashboard() {
-  const [data, setData]     = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]   = useState('')
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December']
 
-  useEffect(() => {
-    getDashboard()
+export default function Dashboard() {
+  const now = new Date()
+  const [data, setData]       = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState('')
+  const [month, setMonth]     = useState(now.getMonth())   // 0-indexed
+  const [year, setYear]       = useState(now.getFullYear())
+
+  const isCurrentMonth = month === now.getMonth() && year === now.getFullYear()
+
+  const fetchDashboard = useCallback(() => {
+    if (!data) setLoading(true) // only show full loading on first load
+    getDashboard({ month, year })
       .then((res) => setData(res.data))
       .catch(() => setError('Failed to load dashboard data.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [month, year]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { fetchDashboard() }, [fetchDashboard])
+
+  const goToPrevMonth = () => {
+    if (month === 0) { setMonth(11); setYear(y => y - 1) }
+    else setMonth(m => m - 1)
+  }
+
+  const goToNextMonth = () => {
+    if (isCurrentMonth) return
+    if (month === 11) { setMonth(0); setYear(y => y + 1) }
+    else setMonth(m => m + 1)
+  }
+
+  const monthLabel = isCurrentMonth ? 'This Month' : `${MONTH_NAMES[month]} ${year}`
 
   if (loading) return (
     <AdminLayout>
@@ -56,18 +80,37 @@ export default function Dashboard() {
 
   return (
     <AdminLayout>
-      <div className="mb-6">
-        <h1 className="font-display font-bold text-2xl text-navy">Dashboard</h1>
-        <p className="text-muted text-sm mt-1">Overview of ReFunction Rehab patient & payment data</p>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="font-display font-bold text-2xl text-navy">Dashboard</h1>
+          <p className="text-muted text-sm mt-1">Overview of ReFunction Rehab patient & payment data</p>
+        </div>
+        {/* Month Picker */}
+        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-2 py-1.5 shadow-sm">
+          <button onClick={goToPrevMonth} className="p-1.5 rounded-lg hover:bg-light transition-colors">
+            <ChevronLeft size={16} className="text-navy" />
+          </button>
+          <span className="text-sm font-semibold text-navy min-w-[140px] text-center">
+            {MONTH_NAMES[month]} {year}
+          </span>
+          <button
+            onClick={goToNextMonth}
+            disabled={isCurrentMonth}
+            className="p-1.5 rounded-lg hover:bg-light disabled:opacity-30 transition-colors"
+          >
+            <ChevronRight size={16} className="text-navy" />
+          </button>
+        </div>
       </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={Users}        color="#1B2F5E" label="Total Patients"        value={fmt(data.totalPatients)}         />
         <StatCard icon={UserPlus}     color="#1A7F8E" label="New Today"             value={fmt(data.newPatientsToday)}       />
-        <StatCard icon={TrendingUp}   color="#059669" label="New This Month"        value={fmt(data.newPatientsThisMonth)}   />
+        <StatCard icon={TrendingUp}   color="#059669" label={`Patients — ${monthLabel}`} value={fmt(data.newPatientsThisMonth)} />
         <StatCard icon={IndianRupee}  color="#E8630A" label="Total Revenue"         value={`₹${fmt(data.totalRevenue)}`}     />
         <StatCard icon={IndianRupee}  color="#F5A623" label="Revenue Today"         value={`₹${fmt(data.revenueToday)}`}     />
+        <StatCard icon={TrendingUp}   color="#10B981" label={`Revenue — ${monthLabel}`} value={`₹${fmt(data.revenueThisMonth)}`} />
         <StatCard icon={Clock}        color="#BE185D" label="Pending Payments"      value={fmt(data.pendingPaymentsCount)}  sub={data.patientsWithNoPayments ? `₹${fmt(data.pendingPaymentsValue)} · ${data.patientsWithNoPayments} unpaid` : `₹${fmt(data.pendingPaymentsValue)}`} />
         <StatCard icon={Package}      color="#7C3AED" label="Active Packages"       value={fmt(data.activePackages)}        />
         <StatCard icon={CalendarCheck} color="#0891B2" label="Visits Today"          value={fmt(data.visitsToday)}           />

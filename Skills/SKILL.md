@@ -510,13 +510,15 @@ POST   /api/auth/login              → Validate staff credentials → return JW
 POST   /api/auth/logout             → Invalidate session
 
 # Doctor / Admin Dashboard (all protected — require valid JWT)
-GET    /api/admin/dashboard         → {
+GET    /api/admin/dashboard         → Query params: ?month=0-11&year=YYYY (optional, defaults to current month)
+                                      Response: {
                                         totalPatients,
                                         newPatientsToday,
                                         newPatientsThisMonth,
                                         totalRevenue,
                                         revenueToday,
                                         revenueThisMonth,
+                                        selectedMonth, selectedYear,
                                         pendingPayments,
                                         recentEnrollments[],
                                         recentPayments[],
@@ -862,12 +864,21 @@ When building this app from scratch, follow this order:
 - All `/admin/*` routes are protected — redirect to `/admin/login` if no valid JWT
 
 ### 13.2 Dashboard Home (`/admin/dashboard`)
-**Stat Cards Row** (4-column grid, 2 rows of 4):
+
+**Month Picker** (top-right corner):
+- Left/right arrows to navigate between months (← January 2026 →)
+- Defaults to the current month on load
+- Cannot navigate beyond the current month (next button disabled)
+- When month changes, the dashboard re-fetches data with `?month=X&year=YYYY` query params
+- Monthly stat card labels update dynamically: "Patients — This Month" or "Patients — March 2026"
+
+**Stat Cards Row** (4-column grid):
 - Total Patients Enrolled (all time)
 - New Patients Today
-- New Patients This Month
+- Patients — {selected month} (enrolled in selected month)
 - Total Revenue (all time, ₹)
 - Revenue Today (₹)
+- Revenue — {selected month} (₹) — revenue for the selected month
 - Pending Payments (count + ₹ value) — **must include** patients who enrolled but have zero payment records (not just payments with `partial`/`pending` status). Count = patients with no payments + payment records in `partial`/`pending` status.
 - Active Packages (count of packages with `status: "active"`)
 - Visits Today (count of visits recorded today)

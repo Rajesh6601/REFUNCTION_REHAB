@@ -51,7 +51,7 @@ export const login           = (data)   => api.post('/auth/login', data)
 export const setupAdmin      = (data)   => api.post('/auth/setup', data)
 
 // ─── Admin Dashboard ──────────────────────────────────────────────────────────
-export const getDashboard    = ()       => api.get('/admin/dashboard')
+export const getDashboard    = (params) => api.get('/admin/dashboard', { params })
 export const getAdminPatients= (params) => api.get('/admin/patients', { params })
 export const getAdminPayments= (params) => api.get('/admin/payments',  { params })
 export const exportPatients  = ()       => api.get('/admin/patients/export', { responseType: 'blob' })

@@ -10,7 +10,12 @@ router.get('/dashboard', async (req, res) => {
   try {
     const now        = new Date()
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    // Support optional month/year query params for monthly stats
+    const qMonth = req.query.month != null ? parseInt(req.query.month) : now.getMonth()  // 0-indexed
+    const qYear  = req.query.year  != null ? parseInt(req.query.year)  : now.getFullYear()
+    const monthStart = new Date(qYear, qMonth, 1)
+    const monthEnd   = new Date(qYear, qMonth + 1, 1) // first day of next month
 
     const [
       totalPatients,
@@ -28,14 +33,14 @@ router.get('/dashboard', async (req, res) => {
     ] = await Promise.all([
       prisma.patient.count(),
       prisma.patient.count({ where: { enrolledAt: { gte: todayStart } } }),
-      prisma.patient.count({ where: { enrolledAt: { gte: monthStart } } }),
+      prisma.patient.count({ where: { enrolledAt: { gte: monthStart, lt: monthEnd } } }),
       prisma.payment.aggregate({ _sum: { amountPaid: true } }),
       prisma.payment.aggregate({
         where: { createdAt: { gte: todayStart } },
         _sum: { amountPaid: true },
       }),
       prisma.payment.aggregate({
-        where: { createdAt: { gte: monthStart } },
+        where: { createdAt: { gte: monthStart, lt: monthEnd } },
         _sum: { amountPaid: true },
       }),
       // Payment records with partial/pending status
@@ -99,6 +104,8 @@ router.get('/dashboard', async (req, res) => {
       totalRevenue:         allPayments._sum.amountPaid || 0,
       revenueToday:         paymentsToday._sum.amountPaid || 0,
       revenueThisMonth:     paymentsMonth._sum.amountPaid || 0,
+      selectedMonth:        qMonth,
+      selectedYear:         qYear,
       // Pending = patients with no payments + payment records in partial/pending status
       pendingPaymentsCount: patientsWithNoPayments + (pendingPaymentRecords._count || 0),
       pendingPaymentsValue: pendingPaymentRecords._sum.balanceDue || 0,
