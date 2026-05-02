@@ -411,6 +411,8 @@ On success: show confirmation card + option to "Proceed to Payment"
 
 ### 4.3 Payment Collection Page (`/payment`)
 
+> **Per-session billing only**: This page handles individual session payments. It does **not** have a package creation toggle — package creation is done exclusively via the Packages & Visits modal on the Patients page (see Section 16.3).
+
 > **Independent of Enrollment**: The payment page operates independently and is accessible at any time — not only immediately after enrollment. Staff can open `/payment` directly, look up any existing patient by Patient ID or mobile number, and record a payment. This makes deferred "pay later" workflows seamless. Multiple payments over time for the same patient are fully supported (session-wise billing), since the `Patient → Payment` relationship is one-to-many.
 
 Based on the Patient Payment Collection Form PDF:
@@ -1105,52 +1107,58 @@ model Payment {
 }
 ```
 
-### 16.3 Integration with Payment Form (`/payment`)
+### 16.3 Package Creation (via Patients Page Modal)
 
-The existing Payment page (Section 4.5 / `Payment.jsx`) gets a **package toggle** — no separate package creation page needed.
+Package creation happens **exclusively** through an inline form inside the Packages & Visits modal on the Patients page (`/admin/patients`). The Payment Collection page (`/payment`) does **not** handle package creation — it is for per-session billing only.
 
-#### Changes to Payment Form
+#### Package Creation Form Fields
 
-**Default session rate:** ₹600 per session (applies to initial line item and newly added service lines).
+The form appears at the top of the modal body when "New Package" is clicked:
 
-After the **Service Details** section, add:
+**Service Details:**
+- **Service / Treatment** — dropdown (Physiotherapy Session, Initial Consultation, Follow-up Session, Exercise Training, Kids Exercise, Post-Surgery Rehab, Sports Injury Session, Elderly Care Session, Home Visit, Group Session, Online Session, Other). Tells the doctor what the package is for. Also saved in the payment's `services` array for billing records.
 
-- **"Package Payment"** toggle with teal icon (default: off)
-- When toggled ON:
-  - The first line item's **quantity auto-syncs** to the selected session count (e.g., selecting 10-Session Package sets qty=10, so total becomes 10 × ₹600 = ₹6,000)
-  - Reveal package-specific fields:
-    - **Package Type** — dropdown of common presets:
-      - 5-Session Package (qty → 5)
-      - 10-Session Package (qty → 10)
-      - 15-Session Package (qty → 15)
-      - Monthly Unlimited (qty → 30)
-      - Custom (manual qty entry)
-    - **Total Sessions** — number input (auto-filled from preset, editable; also syncs line item qty)
-    - **Package Discount (₹)** — flat discount amount subtracted from the total (e.g., ₹6,000 - ₹1,000 discount = ₹5,000). Shown as a green "Package Discount -₹X" line in the totals breakdown. Resets to 0 when toggle is turned off.
-    - **Expiry Date** — optional date picker (package validity window)
-    - **Package Notes** — optional text
-- When toggled OFF, line item qty resets to 1 and package discount resets to 0
-- On payment submission (`POST /api/payments`), if the package toggle is ON, the backend **automatically creates a `TreatmentPackage`** linked to the new payment record using `prisma.$transaction()`. No separate API call needed from the frontend.
+**Package Details:**
+- **Package Type** — dropdown of presets: 5-Session, 10-Session, 15-Session, Monthly Unlimited (30), Custom
+- **Total Sessions** — number input (auto-filled from preset, editable)
+- **Enrollment Date** — date picker (defaults to today)
+- **Expiry Date** — optional date picker
+- **Package Notes** — optional text
 
-#### Totals Breakdown (when package is active with discount)
+**Payment Details (auto-calculated):**
+- Per-session cost: **₹600** (defined as `PER_SESSION_COST` constant in `client/src/pages/admin/Patients.jsx`)
+- A **price breakdown card** shows the calculation in real-time:
+  ```
+  10 sessions × ₹600             ₹6,000
+  Discount                       − ₹500    ← green, only shown when > 0
+  ─────────────────────────────────────────
+  Total                           ₹5,500
+  ```
+- **Discount (₹)** — optional flat amount deducted from subtotal. Cannot exceed subtotal. Discount info is automatically appended to payment remarks for audit trail.
+- **Payment Mode** — Cash, UPI, Card, Bank Transfer, Cheque
+- **Remarks** — optional text
 
-```
-Subtotal                    ₹6,000
-GST (if applicable)         ₹0
-Package Discount            -₹1,000    ← green text, only shown when discount > 0
-─────────────────────────────────────
-TOTAL                       ₹5,000
-```
+On submit, calls `POST /api/payments` with `isPackage: true`. The backend creates both the Payment and TreatmentPackage atomically via `prisma.$transaction()`.
+
+#### Package Detail View (Expanded)
+
+When a package card is expanded in the modal:
+- **Service badge** — teal pill showing the treatment type (e.g. "Physiotherapy Session") at the top of the detail section, read from `pkg.payment.services[0].description`
+- Start Date, Expiry, Remaining sessions, Receipt number
+- Mark Visit button (active packages only)
+- Visit log table
+
+The `services` JSON field is included in the packages API response from `server/src/routes/packages.js` (added to the payment select clause).
 
 #### Flow Example
 
-1. Patient RF-0012 comes in, wants a 10-session package for ₹6,000 with ₹1,000 discount
-2. Staff opens `/payment?patientId=RF-0012`
-3. Toggles ON **"Package Payment"**
-4. Selects preset "10-Session Package" → totalSessions auto-fills to 10, line item qty auto-updates to 10, subtotal shows ₹6,000
-5. Enters Package Discount: ₹1,000 → total updates to ₹5,000
-6. Clicks **Save Record**
-7. Backend creates the Payment (₹5,000) AND the TreatmentPackage (10 sessions) in one atomic transaction
+1. Patient RF-0012 comes in, wants a 10-session physiotherapy package
+2. Staff opens Patients → clicks Pkg Status badge → clicks "New Package"
+3. Selects service "Physiotherapy Session", preset "10-Session Package"
+4. Breakdown shows: 10 × ₹600 = ₹6,000. Enters discount ₹500 → total ₹5,500
+5. Selects payment mode "Cash", clicks "Save Package"
+6. Package appears in the modal list with "active" status and receipt number
+7. Doctor marks daily visits directly from the same modal
 
 ### 16.4 API Routes
 
@@ -1203,10 +1211,11 @@ Add a new column to the existing patients table (Section 13.3):
   - Package name + status badge (green/blue/red) + session progress text + receipt number
   - Progress bar showing `visitsDone / totalSessions`
   - Amber alert when ≤2 sessions remaining
-  - Expanded detail: start date, expiry, remaining sessions, receipt number
+  - Expanded detail: **service/treatment badge** (teal pill, e.g. "Physiotherapy Session"), start date, expiry, remaining sessions, receipt number
   - **"Mark Visit" button** (active packages only) → inline form with date + treatment notes + Confirm/Cancel
   - Visit log table: Visit # | Date | Notes | Marked By | Delete action
-- **Empty state:** "No treatment packages yet" with link to create one via Payment page
+- **"New Package" button** opens an inline creation form at the top of the modal body (see Section 16.3 for full field details)
+- **Empty state:** "No treatment packages yet" with "+ Create a new package" button (opens the same inline form)
 
 **UX benefits over the EditPatient page approach:**
 - **Zero navigation** — doctor stays on the patient list, clicks badge, records visit, closes modal

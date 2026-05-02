@@ -2,10 +2,29 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, Download, ChevronLeft, ChevronRight, CreditCard, Pencil, X, Package, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
-import { getAdminPatients, exportPatients, getPatientPackages, recordVisit, deleteVisit } from '../../lib/api'
+import { getAdminPatients, exportPatients, getPatientPackages, recordVisit, deleteVisit, recordPayment } from '../../lib/api'
 
 const PROGRAMS = ['', 'Physiotherapy', 'General Health & Fitness', 'Kids Exercise',
   'Post-Surgery Rehab', 'Sports Injury', 'Elderly Care']
+
+const PACKAGE_PRESETS = [
+  { label: '5-Session Package',  sessions: 5 },
+  { label: '10-Session Package', sessions: 10 },
+  { label: '15-Session Package', sessions: 15 },
+  { label: 'Monthly Unlimited',  sessions: 30 },
+  { label: 'Custom',             sessions: 0 },
+]
+
+const SERVICES_LIST = [
+  'Physiotherapy Session', 'Initial Consultation', 'Follow-up Session',
+  'Exercise Training', 'Kids Exercise', 'Post-Surgery Rehab',
+  'Sports Injury Session', 'Elderly Care Session', 'Home Visit',
+  'Group Session', 'Online Session', 'Other',
+]
+
+const PER_SESSION_COST = 600
+
+const PAYMENT_MODES = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Cheque']
 
 export default function AdminPatients() {
   const [data, setData]       = useState({ patients: [], total: 0, pages: 1 })
@@ -49,6 +68,38 @@ export default function AdminPatients() {
   const [visitNotes, setVisitNotes]      = useState('')
   const [visitSaving, setVisitSaving]    = useState(false)
 
+  // New Package form state
+  const [showNewPkg, setShowNewPkg]         = useState(false)
+  const [newPkgSaving, setNewPkgSaving]     = useState(false)
+  const [serviceType, setServiceType]       = useState('Physiotherapy Session')
+  const [packageName, setPackageName]       = useState('10-Session Package')
+  const [totalSessions, setTotalSessions]   = useState(10)
+  const [startDate, setStartDate]           = useState(new Date().toISOString().split('T')[0])
+  const [expiryDate, setExpiryDate]         = useState('')
+  const [packageNotes, setPackageNotes]     = useState('')
+  const [discount, setDiscount]             = useState('')
+  const [paymentMode, setPaymentMode]       = useState('Cash')
+  const [paymentRemarks, setPaymentRemarks] = useState('')
+
+  // Auto-calculated pricing
+  const subTotal    = Number(totalSessions) * PER_SESSION_COST
+  const discountAmt = Number(discount) || 0
+  const finalAmount = Math.max(subTotal - discountAmt, 0)
+
+  const resetNewPkgForm = () => {
+    setShowNewPkg(false)
+    setNewPkgSaving(false)
+    setServiceType('Physiotherapy Session')
+    setPackageName('10-Session Package')
+    setTotalSessions(10)
+    setStartDate(new Date().toISOString().split('T')[0])
+    setExpiryDate('')
+    setPackageNotes('')
+    setDiscount('')
+    setPaymentMode('Cash')
+    setPaymentRemarks('')
+  }
+
   const openPkgModal = async (patient) => {
     setModalPatient({ id: patient.id, fullName: patient.fullName })
     setExpandedPkg(null)
@@ -67,6 +118,7 @@ export default function AdminPatients() {
     setPackages([])
     setExpandedPkg(null)
     setVisitForm(null)
+    resetNewPkgForm()
   }
 
   const handleMarkVisit = async (pkgId) => {
@@ -96,6 +148,54 @@ export default function AdminPatients() {
       setPackages([...res.data].sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3)))
       fetchPatients()
     } catch { alert('Failed to delete visit') }
+  }
+
+  const handleCreatePackage = async () => {
+    if (!totalSessions || Number(totalSessions) <= 0) { alert('Please enter total sessions'); return }
+    if (finalAmount <= 0) { alert('Final amount must be greater than zero'); return }
+    if (discountAmt > subTotal) { alert('Discount cannot exceed the subtotal'); return }
+    setNewPkgSaving(true)
+    try {
+      const remarks = [
+        paymentRemarks,
+        discountAmt > 0 ? `Discount: ₹${discountAmt.toLocaleString('en-IN')} on ₹${subTotal.toLocaleString('en-IN')}` : '',
+      ].filter(Boolean).join(' | ')
+      await recordPayment({
+        patientId: modalPatient.id,
+        totalAmount: finalAmount,
+        subTotal: subTotal,
+        gst: 0,
+        amountPaid: finalAmount,
+        balanceDue: 0,
+        advancePaid: 0,
+        paymentMode,
+        paymentDate: startDate,
+        status: 'paid',
+        services: [{
+          description: serviceType,
+          qty: Number(totalSessions),
+          unitRate: PER_SESSION_COST,
+          discount: discountAmt,
+          amount: finalAmount,
+        }],
+        collectedBy: 'Staff',
+        remarks,
+        isPackage: true,
+        packageName,
+        totalSessions: Number(totalSessions),
+        expiryDate: expiryDate || null,
+        packageNotes,
+      })
+      resetNewPkgForm()
+      // Refresh packages in modal
+      const res = await getPatientPackages(modalPatient.id)
+      const order = { active: 0, completed: 1, expired: 2 }
+      setPackages([...res.data].sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3)))
+      // Refresh patient list to update badge
+      fetchPatients()
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to create package')
+    } finally { setNewPkgSaving(false) }
   }
 
   const handleExport = async () => {
@@ -283,12 +383,14 @@ export default function AdminPatients() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Link
-                  to={`/admin/payment?patientId=${modalPatient.id}`}
+                <button
+                  type="button"
+                  onClick={() => setShowNewPkg(true)}
                   className="btn-teal text-xs py-2 px-3"
+                  disabled={showNewPkg}
                 >
                   <Plus size={14} /> New Package
-                </Link>
+                </button>
                 <button onClick={closePkgModal} className="p-2 rounded-lg hover:bg-light transition-colors">
                   <X size={18} className="text-muted" />
                 </button>
@@ -297,14 +399,173 @@ export default function AdminPatients() {
 
             {/* Body */}
             <div className="overflow-y-auto p-5">
+              {/* Inline New Package Form */}
+              {showNewPkg && (
+                <div className="bg-light border border-gray-200 rounded-xl p-4 mb-5">
+                  <h3 className="font-semibold text-navy text-sm mb-3">New Package</h3>
+
+                  {/* Service Details */}
+                  <div className="mb-3">
+                    <label className="form-label text-xs">Service / Treatment</label>
+                    <select
+                      className="input-field text-sm"
+                      value={serviceType}
+                      onChange={(e) => setServiceType(e.target.value)}
+                    >
+                      {SERVICES_LIST.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Package Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="form-label text-xs">Package Type</label>
+                      <select
+                        className="input-field text-sm"
+                        value={packageName}
+                        onChange={(e) => {
+                          const preset = PACKAGE_PRESETS.find((p) => p.label === e.target.value)
+                          setPackageName(e.target.value)
+                          if (preset && preset.sessions > 0) setTotalSessions(preset.sessions)
+                        }}
+                      >
+                        {PACKAGE_PRESETS.map((p) => (
+                          <option key={p.label} value={p.label}>{p.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Total Sessions</label>
+                      <input
+                        type="number"
+                        min="1"
+                        className="input-field text-sm"
+                        value={totalSessions}
+                        onChange={(e) => setTotalSessions(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Enrollment Date</label>
+                      <input
+                        type="date"
+                        className="input-field text-sm"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Expiry Date <span className="text-muted">(optional)</span></label>
+                      <input
+                        type="date"
+                        className="input-field text-sm"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="form-label text-xs">Package Notes <span className="text-muted">(optional)</span></label>
+                      <input
+                        className="input-field text-sm"
+                        placeholder="Any notes about this package..."
+                        value={packageNotes}
+                        onChange={(e) => setPackageNotes(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Payment Details */}
+                  <h3 className="font-semibold text-navy text-sm mb-3 mt-4 pt-3 border-t border-gray-200">Payment Details</h3>
+
+                  {/* Price Breakdown */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3 text-sm">
+                    <div className="flex justify-between text-muted">
+                      <span>{totalSessions} sessions × ₹{PER_SESSION_COST.toLocaleString('en-IN')}</span>
+                      <span>₹{subTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                    {discountAmt > 0 && (
+                      <div className="flex justify-between text-green-600 mt-1">
+                        <span>Discount</span>
+                        <span>− ₹{discountAmt.toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-semibold text-navy mt-1 pt-1 border-t border-gray-100">
+                      <span>Total</span>
+                      <span>₹{finalAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div>
+                      <label className="form-label text-xs">Discount (₹) <span className="text-muted">(optional)</span></label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={subTotal}
+                        className="input-field text-sm"
+                        placeholder="0"
+                        value={discount}
+                        onChange={(e) => setDiscount(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Payment Mode</label>
+                      <select
+                        className="input-field text-sm"
+                        value={paymentMode}
+                        onChange={(e) => setPaymentMode(e.target.value)}
+                      >
+                        {PAYMENT_MODES.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Remarks <span className="text-muted">(optional)</span></label>
+                      <input
+                        className="input-field text-sm"
+                        placeholder="Payment remarks..."
+                        value={paymentRemarks}
+                        onChange={(e) => setPaymentRemarks(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={newPkgSaving}
+                      onClick={handleCreatePackage}
+                      className="btn-teal text-xs py-2 px-4 disabled:opacity-60"
+                    >
+                      {newPkgSaving ? 'Saving...' : 'Save Package'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetNewPkgForm}
+                      className="btn-outline text-xs py-2 px-4"
+                      disabled={newPkgSaving}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {pkgLoading ? (
                 <p className="text-muted text-sm text-center py-12">Loading packages...</p>
               ) : packages.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-muted text-sm mb-3">No treatment packages yet.</p>
-                  <Link to={`/admin/payment?patientId=${modalPatient.id}`} className="text-teal text-sm font-medium hover:underline">
-                    Create a package via Payment page
-                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPkg(true)}
+                    className="text-teal text-sm font-medium hover:underline"
+                  >
+                    + Create a new package
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -358,6 +619,15 @@ export default function AdminPatients() {
                         {/* Expanded detail */}
                         {isExpanded && (
                           <div className="border-t border-gray-100 p-4 bg-light/50">
+                            {/* Service / Treatment */}
+                            {pkg.payment?.services?.length > 0 && (
+                              <div className="mb-3">
+                                <span className="text-xs bg-teal/10 text-teal px-2 py-0.5 rounded-full font-medium">
+                                  {pkg.payment.services[0].description}
+                                </span>
+                              </div>
+                            )}
+
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-4">
                               <div>
                                 <span className="text-muted text-xs">Start Date</span>

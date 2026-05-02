@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
       where: { patientId },
       orderBy: { createdAt: 'desc' },
       include: {
-        payment: { select: { receiptNo: true, totalAmount: true, amountPaid: true, paymentDate: true } },
+        payment: { select: { receiptNo: true, totalAmount: true, amountPaid: true, paymentDate: true, services: true } },
         _count:  { select: { visits: true } },
         visits:  { orderBy: { visitNumber: 'asc' } },
       },
@@ -46,7 +46,7 @@ router.get('/:id', async (req, res) => {
       where: { id: req.params.id },
       include: {
         patient: { select: { id: true, fullName: true, mobile: true } },
-        payment: { select: { receiptNo: true, totalAmount: true, amountPaid: true, paymentDate: true } },
+        payment: { select: { receiptNo: true, totalAmount: true, amountPaid: true, paymentDate: true, services: true } },
         visits:  { orderBy: { visitNumber: 'asc' } },
       },
     })

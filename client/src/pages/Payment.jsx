@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, CreditCard, Smartphone, Building2, Wallet, FileText, CheckCircle, Plus, Trash2, Package } from 'lucide-react'
+import { Search, CreditCard, Smartphone, Building2, Wallet, FileText, CheckCircle, Plus, Trash2 } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
 import { searchPatients, recordPayment } from '../lib/api'
 
@@ -10,14 +10,6 @@ const SERVICES_LIST = [
   'Exercise Training', 'Kids Exercise', 'Post-Surgery Rehab',
   'Sports Injury Session', 'Elderly Care Session', 'Home Visit',
   'Group Session', 'Online Session', 'Other',
-]
-
-const PACKAGE_PRESETS = [
-  { label: '5-Session Package',  sessions: 5 },
-  { label: '10-Session Package', sessions: 10 },
-  { label: '15-Session Package', sessions: 15 },
-  { label: 'Monthly Unlimited',  sessions: 30 },
-  { label: 'Custom',             sessions: 0 },
 ]
 
 const PAYMENT_MODES = [
@@ -42,12 +34,6 @@ export default function Payment() {
   const [saveError, setSaveError]     = useState('')
   const [amountPaid, setAmountPaid]   = useState(0)
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
-  const [isPackage, setIsPackage]     = useState(false)
-  const [packageName, setPackageName] = useState('10-Session Package')
-  const [totalSessions, setTotalSessions] = useState(10)
-  const [pkgExpiry, setPkgExpiry]     = useState('')
-  const [packageNotes, setPackageNotes] = useState('')
-  const [packageDiscount, setPackageDiscount] = useState(0)
   const [lineItems, setLineItems]     = useState([
     { service: 'Physiotherapy Session', qty: 1, rate: 600, discount: 0 },
   ])
@@ -100,7 +86,7 @@ export default function Payment() {
 
   const subtotal  = lineItems.reduce((sum, l) => sum + l.qty * l.rate - l.discount, 0)
   const gst       = 0
-  const total     = subtotal + gst - (isPackage ? packageDiscount : 0)
+  const total     = subtotal + gst
   const balanceDue = total - amountPaid
 
   useEffect(() => { setAmountPaid(total) }, [total])
@@ -305,114 +291,11 @@ export default function Payment() {
                 <div className="flex justify-between text-muted">
                   <span>GST (if applicable)</span><span>₹{gst}</span>
                 </div>
-                {isPackage && packageDiscount > 0 && (
-                  <div className="flex justify-between text-green-600 font-medium">
-                    <span>Package Discount</span><span>-₹{packageDiscount.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
                 <div className="flex justify-between font-bold text-lg text-navy border-t border-gray-200 pt-2">
                   <span>TOTAL</span><span>₹{total.toLocaleString('en-IN')}</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Package Toggle */}
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-semibold text-lg text-navy flex items-center gap-2">
-                <Package size={20} className="text-teal" /> Package Payment
-              </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !isPackage
-                  setIsPackage(next)
-                  if (next) {
-                    // Auto-set first line item qty to match default sessions
-                    setLineItems(items => {
-                      const updated = [...items]
-                      updated[0] = { ...updated[0], qty: totalSessions || 10 }
-                      return updated
-                    })
-                  } else {
-                    // Reset back to single session
-                    setLineItems(items => {
-                      const updated = [...items]
-                      updated[0] = { ...updated[0], qty: 1 }
-                      return updated
-                    })
-                    setPackageDiscount(0)
-                  }
-                }}
-                className={`relative w-12 h-6 rounded-full transition-colors ${isPackage ? 'bg-teal' : 'bg-gray-300'}`}
-              >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isPackage ? 'translate-x-6' : ''}`} />
-              </button>
-            </div>
-            {isPackage && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4">
-                <p className="text-sm text-muted">This payment is for a treatment package with multiple sessions.</p>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Package Type</label>
-                    <select
-                      className="input-field"
-                      value={packageName}
-                      onChange={(e) => {
-                        const preset = PACKAGE_PRESETS.find(p => p.label === e.target.value)
-                        setPackageName(e.target.value)
-                        if (preset && preset.sessions > 0) {
-                          setTotalSessions(preset.sessions)
-                          setLineItems(items => {
-                            const updated = [...items]
-                            updated[0] = { ...updated[0], qty: preset.sessions }
-                            return updated
-                          })
-                        }
-                      }}
-                    >
-                      {PACKAGE_PRESETS.map(p => <option key={p.label}>{p.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label">Total Sessions</label>
-                    <input
-                      type="number" min="1" className="input-field"
-                      value={totalSessions}
-                      onChange={(e) => {
-                        const val = Number(e.target.value) || 0
-                        setTotalSessions(val)
-                        if (val > 0) {
-                          setLineItems(items => {
-                            const updated = [...items]
-                            updated[0] = { ...updated[0], qty: val }
-                            return updated
-                          })
-                        }
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Package Discount (₹)</label>
-                    <input
-                      type="number" min="0" className="input-field"
-                      value={packageDiscount}
-                      onChange={(e) => setPackageDiscount(Number(e.target.value) || 0)}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Expiry Date (optional)</label>
-                    <input type="date" className="input-field" value={pkgExpiry} onChange={(e) => setPkgExpiry(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="form-label">Package Notes</label>
-                    <input className="input-field" placeholder="Any notes about this package" value={packageNotes} onChange={(e) => setPackageNotes(e.target.value)} />
-                  </div>
-                </div>
-              </motion.div>
-            )}
           </div>
 
           {/* Payment Mode */}
@@ -550,13 +433,6 @@ export default function Payment() {
                       subTotal: subtotal, gst, totalAmount: total,
                       amountPaid, balanceDue, paymentMode: payMode,
                       paymentDate, status, collectedBy, remarks,
-                      ...(isPackage && {
-                        isPackage: true,
-                        packageName,
-                        totalSessions,
-                        expiryDate: pkgExpiry || undefined,
-                        packageNotes: packageNotes || undefined,
-                      }),
                     })
                     setSavedPayment(res.data.payment)
                     setTimeout(() => navigate('/admin/payments'), 2000)
