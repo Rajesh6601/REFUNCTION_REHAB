@@ -117,6 +117,12 @@ sshpass -p 'R@jeshshukl@123' ssh -o StrictHostKeyChecking=no \
 - **Frontend:** http://187.127.147.87
 - **API:** http://187.127.147.87:4000
 
+## Payment System
+
+Payments are collected **manually by the doctor/staff** (cash, UPI, card, cheque, etc.) and recorded in the admin portal. No Razorpay or online payment gateway is integrated. The `/admin/payment` page and all `/api/payments` endpoints require admin authentication — only logged-in staff can record payments.
+
+---
+
 ## Common Issues
 
 **"Permission denied" on SSH** — The VPS requires explicit password auth flags. Always use `-o PreferredAuthentications=password -o KbdInteractiveAuthentication=no` with sshpass.

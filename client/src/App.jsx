@@ -43,7 +43,6 @@ function PublicRoutes() {
           <Route path="/services/:slug"  element={<ServiceDetail />} />
           <Route path="/enroll"          element={<Enroll />}        />
           <Route path="/contact"         element={<Contact />}       />
-          <Route path="/payment"         element={<Payment />}       />
           <Route path="/testimonials"    element={<Testimonials />}  />
         </Routes>
       </AnimatePresence>
@@ -65,6 +64,7 @@ export default function App() {
         <Route path="/admin/patients/:id/edit" element={<ProtectedRoute><EditPatient /></ProtectedRoute>} />
         <Route path="/admin/payments"       element={<ProtectedRoute><AdminPayments /></ProtectedRoute>} />
         <Route path="/admin/testimonials"  element={<ProtectedRoute><AdminTestimonials /></ProtectedRoute>} />
+        <Route path="/admin/payment"       element={<ProtectedRoute><Payment /></ProtectedRoute>} />
         <Route path="/admin"           element={<Navigate to="/admin/dashboard" replace />} />
 
         {/* All public routes */}

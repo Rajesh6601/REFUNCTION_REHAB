@@ -135,12 +135,8 @@ export default function Enroll() {
               <p className="text-muted mb-4">
                 Thank you for enrolling with ReFunction Rehab. Dr. Neha's team will contact you within 24 hours to confirm your session.
               </p>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 text-sm text-amber-800">
-                <strong>Payment is optional right now.</strong> You can pay at any time later using your Patient ID or mobile number on the Payment page.
-              </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/" className="btn-primary justify-center">Back to Home</Link>
-                <Link to={`/payment${enrolledId ? `?patientId=${enrolledId}` : ''}`} className="btn-outline justify-center">Proceed to Payment</Link>
               </div>
             </motion.div>
           </div>

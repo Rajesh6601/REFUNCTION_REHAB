@@ -1,5 +1,8 @@
 const router = require('express').Router()
 const prisma = require('../lib/prisma')
+const { requireAuth } = require('../middleware/auth')
+
+router.use(requireAuth)
 
 function generateReceiptNo() {
   const date = new Date()

@@ -231,7 +231,7 @@ export default function AdminPatients() {
                         <Package size={13} /> Visits
                       </button>
                       <Link
-                        to={`/payment?patientId=${p.id}`}
+                        to={`/admin/payment?patientId=${p.id}`}
                         className="inline-flex items-center gap-1 text-xs text-teal hover:underline font-medium whitespace-nowrap"
                       >
                         <CreditCard size={13} /> Payment
@@ -284,7 +284,7 @@ export default function AdminPatients() {
               </div>
               <div className="flex items-center gap-2">
                 <Link
-                  to={`/payment?patientId=${modalPatient.id}`}
+                  to={`/admin/payment?patientId=${modalPatient.id}`}
                   className="btn-teal text-xs py-2 px-3"
                 >
                   <Plus size={14} /> New Package
@@ -302,7 +302,7 @@ export default function AdminPatients() {
               ) : packages.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-muted text-sm mb-3">No treatment packages yet.</p>
-                  <Link to={`/payment?patientId=${modalPatient.id}`} className="text-teal text-sm font-medium hover:underline">
+                  <Link to={`/admin/payment?patientId=${modalPatient.id}`} className="text-teal text-sm font-medium hover:underline">
                     Create a package via Payment page
                   </Link>
                 </div>
