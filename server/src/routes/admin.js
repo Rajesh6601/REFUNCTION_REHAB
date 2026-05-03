@@ -30,6 +30,8 @@ router.get('/dashboard', async (req, res) => {
       recentPayments,
       activePackages,
       visitsToday,
+      appointmentsToday,
+      todaysSchedule,
     ] = await Promise.all([
       prisma.patient.count(),
       prisma.patient.count({ where: { enrolledAt: { gte: todayStart } } }),
@@ -68,6 +70,21 @@ router.get('/dashboard', async (req, res) => {
       }),
       prisma.treatmentPackage.count({ where: { status: 'active' } }),
       prisma.patientVisit.count({ where: { visitDate: { gte: todayStart } } }),
+      prisma.appointment.count({
+        where: {
+          appointmentDate: { gte: todayStart },
+          status: { notIn: ['cancelled'] },
+        },
+      }),
+      prisma.appointment.findMany({
+        where: {
+          appointmentDate: { gte: todayStart },
+          status: { notIn: ['cancelled'] },
+        },
+        orderBy: { startTime: 'asc' },
+        take: 10,
+        include: { patient: { select: { fullName: true, mobile: true } } },
+      }),
     ])
 
     // Packages needing attention: active with <=2 sessions remaining
@@ -116,6 +133,8 @@ router.get('/dashboard', async (req, res) => {
       activePackages,
       visitsToday,
       attentionPackages,
+      appointmentsToday,
+      todaysSchedule,
     })
   } catch (err) {
     console.error('[admin dashboard]', err)

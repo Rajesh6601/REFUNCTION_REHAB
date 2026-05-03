@@ -142,7 +142,7 @@ export default function Navbar() {
 
         {/* CTA */}
         <div className="hidden lg:flex items-center gap-3">
-          <Link to="/enroll" className="btn-primary text-sm py-2.5 px-5">
+          <Link to="/book" className="btn-primary text-sm py-2.5 px-5">
             Book Appointment
           </Link>
         </div>
@@ -198,7 +198,7 @@ export default function Navbar() {
                 </div>
               ))}
               <Link
-                to="/enroll"
+                to="/book"
                 onClick={() => setMobileOpen(false)}
                 className="btn-primary justify-center mt-3 text-base"
               >

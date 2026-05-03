@@ -36,7 +36,7 @@ export default function CTABanner() {
             <a href="tel:+919900911795" className="btn-primary text-base px-8 py-4">
               <Phone size={20} /> Call Us: 99009 11795
             </a>
-            <Link to="/enroll" className="btn-secondary text-base px-8 py-4">
+            <Link to="/book" className="btn-secondary text-base px-8 py-4">
               Book Appointment <ArrowRight size={20} />
             </Link>
           </div>

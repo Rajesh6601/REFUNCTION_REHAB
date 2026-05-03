@@ -24,6 +24,9 @@ import AdminPatients from './pages/admin/Patients'
 import AdminPayments from './pages/admin/Payments'
 import EditPatient         from './pages/admin/EditPatient'
 import AdminTestimonials   from './pages/admin/Testimonials'
+import AdminAvailability   from './pages/admin/Availability'
+import AdminAppointments   from './pages/admin/Appointments'
+import Book                from './pages/Book'
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('rfr_token')
@@ -43,6 +46,7 @@ function PublicRoutes() {
           <Route path="/services/:slug"  element={<ServiceDetail />} />
           <Route path="/enroll"          element={<Enroll />}        />
           <Route path="/contact"         element={<Contact />}       />
+          <Route path="/book"            element={<Book />}          />
           <Route path="/testimonials"    element={<Testimonials />}  />
         </Routes>
       </AnimatePresence>
@@ -64,6 +68,8 @@ export default function App() {
         <Route path="/admin/patients/:id/edit" element={<ProtectedRoute><EditPatient /></ProtectedRoute>} />
         <Route path="/admin/payments"       element={<ProtectedRoute><AdminPayments /></ProtectedRoute>} />
         <Route path="/admin/testimonials"  element={<ProtectedRoute><AdminTestimonials /></ProtectedRoute>} />
+        <Route path="/admin/availability"  element={<ProtectedRoute><AdminAvailability /></ProtectedRoute>} />
+        <Route path="/admin/appointments"  element={<ProtectedRoute><AdminAppointments /></ProtectedRoute>} />
         <Route path="/admin/payment"       element={<ProtectedRoute><Payment /></ProtectedRoute>} />
         <Route path="/admin"           element={<Navigate to="/admin/dashboard" replace />} />
 

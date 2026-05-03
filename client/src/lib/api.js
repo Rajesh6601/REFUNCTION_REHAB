@@ -74,4 +74,24 @@ export const createTestimonial      = (data)   => api.post('/testimonials/admin'
 export const updateTestimonial      = (id, data) => api.patch(`/testimonials/admin/${id}`, data)
 export const deleteTestimonial      = (id)     => api.delete(`/testimonials/admin/${id}`)
 
+// ─── Appointments (Public) ─────────────────────────────────────────────────
+export const getAvailableSlots  = (date)     => api.get('/appointments/slots', { params: { date } })
+export const lookupPatient      = (q)        => api.post('/appointments/lookup', { q })
+export const createAppointment  = (data)     => api.post('/appointments', data)
+export const cancelAppointment  = (id, data) => api.patch(`/appointments/${id}/cancel`, data)
+
+// ─── Appointments (Admin) ──────────────────────────────────────────────────
+export const getAdminAppointments = (params) => api.get('/appointments', { params })
+export const updateAppointment    = (id, data) => api.patch(`/appointments/${id}`, data)
+export const getTodaysSchedule    = ()       => api.get('/appointments/today')
+
+// ─── Availability (Admin) ──────────────────────────────────────────────────
+export const getAvailability    = ()         => api.get('/admin/availability')
+export const createAvailability = (data)     => api.post('/admin/availability', data)
+export const updateAvailability = (id, data) => api.patch(`/admin/availability/${id}`, data)
+export const deleteAvailability = (id)       => api.delete(`/admin/availability/${id}`)
+export const getSlotOverrides   = (params)   => api.get('/admin/availability/overrides', { params })
+export const createSlotOverride = (data)     => api.post('/admin/availability/overrides', data)
+export const deleteSlotOverride = (id)       => api.delete(`/admin/availability/overrides/${id}`)
+
 export default api

@@ -136,7 +136,12 @@ export default function Enroll() {
                 Thank you for enrolling with ReFunction Rehab. Dr. Neha's team will contact you within 24 hours to confirm your session.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/" className="btn-primary justify-center">Back to Home</Link>
+                {enrolledId && (
+                  <Link to={`/book?patientId=${enrolledId}`} className="btn-primary justify-center bg-orange hover:bg-orange/90">
+                    Book Your First Appointment
+                  </Link>
+                )}
+                <Link to="/" className="btn-outline justify-center">Back to Home</Link>
               </div>
             </motion.div>
           </div>

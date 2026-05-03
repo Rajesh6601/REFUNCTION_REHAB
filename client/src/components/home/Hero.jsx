@@ -55,7 +55,7 @@ export default function Hero() {
             </motion.p>
 
             <motion.div {...fadeUp(0.5)} className="flex flex-wrap gap-4">
-              <Link to="/enroll" className="btn-primary text-base px-8 py-4">
+              <Link to="/book" className="btn-primary text-base px-8 py-4">
                 Book Appointment <ArrowRight size={18} />
               </Link>
               <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-secondary text-base px-8 py-4">

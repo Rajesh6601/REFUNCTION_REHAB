@@ -8,6 +8,8 @@ const authRoutes    = require('./routes/auth')
 const adminRoutes        = require('./routes/admin')
 const testimonialRoutes  = require('./routes/testimonials')
 const packageRoutes      = require('./routes/packages')
+const appointmentRoutes  = require('./routes/appointments')
+const availabilityRoutes = require('./routes/availability')
 
 const app  = express()
 const PORT = process.env.PORT || 4000
@@ -33,6 +35,8 @@ app.use('/api/auth',     authRoutes)
 app.use('/api/admin',         adminRoutes)
 app.use('/api/testimonials',  testimonialRoutes)
 app.use('/api/admin/packages', packageRoutes)
+app.use('/api/appointments',        appointmentRoutes)
+app.use('/api/admin/availability',  availabilityRoutes)
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

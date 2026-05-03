@@ -47,6 +47,7 @@ model Patient {
   enrolledAt        DateTime  @default(now())
   payments          Payment[]
   packages          TreatmentPackage[]
+  appointments      Appointment[]
 
   @@map("patients")
 }
@@ -140,6 +141,7 @@ model TreatmentPackage {
   status        String         @default("active")
   notes         String?
   visits        PatientVisit[]
+  appointments  Appointment[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -157,4 +159,55 @@ model PatientVisit {
   createdAt      DateTime         @default(now())
 
   @@map("patient_visits")
+}
+
+model DoctorAvailability {
+  id           String  @id @default(cuid())
+  dayOfWeek    Int     // 0=Sunday ... 6=Saturday
+  startTime    String  // "HH:mm"
+  endTime      String  // "HH:mm"
+  slotDuration Int     @default(30) // minutes
+  maxPatients  Int     @default(1)
+  sessionType  String  @default("In-Person")
+  label        String? // e.g. "Morning Batch"
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("doctor_availability")
+}
+
+model SlotOverride {
+  id        String   @id @default(cuid())
+  date      DateTime // specific date
+  startTime String?  // optional slot-level override
+  endTime   String?
+  isBlocked Boolean  @default(true)
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@map("slot_overrides")
+}
+
+model Appointment {
+  id                String            @id @default(cuid())
+  patientId         String
+  patient           Patient           @relation(fields: [patientId], references: [id])
+  packageId         String?
+  package           TreatmentPackage? @relation(fields: [packageId], references: [id])
+  appointmentDate   DateTime
+  startTime         String  // "HH:mm"
+  endTime           String  // "HH:mm"
+  serviceType       String  // e.g. "Physiotherapy"
+  sessionType       String  @default("In-Person")
+  status            String  @default("booked") // booked, completed, cancelled, no-show
+  notes             String?
+  cancellationReason String?
+  cancelledAt       DateTime?
+  reminderSent      Boolean @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([patientId, appointmentDate, startTime])
+  @@map("appointments")
 }

@@ -262,7 +262,7 @@ Prisma handles both local Docker Postgres and managed cloud Postgres identically
 /services/kids             → Kids Exercise & Development
 /about                     → About Dr. Neha + Clinic
 /enroll                    → Patient Enrollment Form (saves to DB)
-/book                      → Book an Appointment (redirect to enrollment or inline)
+/book                      → Book an Appointment (patient-facing: select service → date → time slot → confirm)
 /payment                   → Payment Collection Page (saves to DB)
 /contact                   → Contact + Location (saves to DB)
 /testimonials              → All patient testimonials (public)
@@ -271,6 +271,8 @@ Prisma handles both local Docker Postgres and managed cloud Postgres identically
 /admin/payments            → Full paginated payment records with revenue summary
 /admin/dashboard           → Overview: total enrolled, today's sessions, revenue stats
 /admin/testimonials        → Manage testimonials (add, edit, approve, delete)
+/admin/availability        → Doctor Availability Management (weekly schedule, slot overrides)
+/admin/calendar            → Appointment Calendar View (weekly timeline, manage daily appointments)
 ```
 
 ---
@@ -403,9 +405,13 @@ Custom multi-step React form (Google Form removed). Goes directly to the registr
 - Patient/Guardian Signature (canvas-based e-signature component)
 - Submit button → POST to `/api/patients/enroll`
 
-On success: show confirmation card + option to "Proceed to Payment"
+On success: show confirmation card with two CTAs:
+- **"Book Your First Appointment"** (primary, orange) — links to `/book?patientId={id}`, auto-fills patient lookup and skips to service selection
+- **"Back to Home"** (outlined) — returns to homepage
 
-> **Enroll Now, Pay Later**: Payment is **not** mandatory at enrollment time. Patients receive their Patient ID immediately upon successful enrollment. Payment can be made at any later time via the `/payment` page by searching with Patient ID or mobile number. Staff can also record payments later from the admin dashboard (`/admin/payments`). The "Proceed to Payment" link on the success screen is a convenience shortcut — not a required step.
+> **Enroll → Book Flow**: After enrollment, the primary CTA guides the patient directly into the booking flow. The `/book` page reads the `patientId` query parameter, auto-looks up the patient record, and skips the lookup step — taking the patient straight to service selection. This creates a seamless enrollment-to-booking experience without requiring the patient to re-enter their ID.
+
+> **Enroll Now, Pay Later**: Payment is **not** mandatory at enrollment time. Patients receive their Patient ID immediately upon successful enrollment. Payment can be made at any later time via the `/payment` page by searching with Patient ID or mobile number. Staff can also record payments later from the admin dashboard (`/admin/payments`).
 
 ---
 
@@ -540,6 +546,34 @@ GET    /api/testimonials/:id        → Get single testimonial by ID (public)
 POST   /api/admin/testimonials      → Create new testimonial (protected)
 PATCH  /api/admin/testimonials/:id  → Update testimonial (edit, approve/reject) (protected)
 DELETE /api/admin/testimonials/:id  → Delete testimonial (protected)
+
+# Available Slots (public — patients see doctor availability)
+GET    /api/slots?date=YYYY-MM-DD           → Get available time slots for a specific date
+GET    /api/slots/calendar?from=&to=        → Date-level availability summary for calendar widget
+
+# Appointments (patient-facing)
+POST   /api/appointments                    → Book an appointment (validates slot availability + capacity)
+GET    /api/appointments?patientId={id}     → List patient's appointments (upcoming + past)
+GET    /api/appointments/:id                → Get appointment details
+PATCH  /api/appointments/:id/cancel         → Cancel appointment (≥4 hours before)
+PATCH  /api/appointments/:id/reschedule     → Reschedule to a new slot
+
+# Appointments (admin, protected)
+GET    /api/admin/appointments              → List all appointments (paginated, filterable)
+GET    /api/admin/appointments/today        → Today's schedule
+PATCH  /api/admin/appointments/:id          → Update status (confirm, complete, no-show)
+GET    /api/admin/appointments/stats        → Appointment statistics
+
+# Doctor Availability (admin, protected)
+GET    /api/admin/availability              → List all availability blocks
+POST   /api/admin/availability              → Create availability block
+PATCH  /api/admin/availability/:id          → Update availability block
+DELETE /api/admin/availability/:id          → Delete availability block
+
+# Slot Overrides (admin, protected)
+GET    /api/admin/slot-overrides            → List overrides (next 30 days)
+POST   /api/admin/slot-overrides            → Create override (block day/slot, adjust capacity)
+DELETE /api/admin/slot-overrides/:id        → Remove override
 ```
 
 ---
@@ -587,6 +621,7 @@ model Patient {
   enrolledAt        DateTime  @default(now())
   payments          Payment[]
   packages          TreatmentPackage[]
+  appointments      Appointment[]
 }
 
 model Payment {
@@ -801,12 +836,15 @@ refunction-rehab/
 │   │   │   ├── Contact.jsx
 │   │   │   ├── About.jsx
 │   │   │   ├── Testimonials.jsx  # Public testimonials page
+│   │   │   ├── Book.jsx          # Appointment booking (service → date → time slot → confirm)
 │   │   │   └── admin/
 │   │   │       ├── Login.jsx
 │   │   │       ├── Dashboard.jsx
 │   │   │       ├── Patients.jsx
 │   │   │       ├── Payments.jsx
-│   │   │       └── Testimonials.jsx  # Admin testimonial management
+│   │   │       ├── Testimonials.jsx  # Admin testimonial management
+│   │   │       ├── Availability.jsx  # Doctor availability schedule management
+│   │   │       └── Calendar.jsx      # Appointment calendar view
 │   │   ├── hooks/           # usePatient, usePayment, useAuth
 │   │   └── lib/             # api.js (axios instance + package/visit API functions), validators.js
 │
@@ -817,6 +855,8 @@ refunction-rehab/
 │   │   ├── patients.js
 │   │   ├── payments.js
 │   │   ├── packages.js       # Treatment package CRUD + visit recording
+│   │   ├── appointments.js   # Patient booking + admin appointment management
+│   │   ├── availability.js   # Doctor availability + slot overrides + public slot queries
 │   │   ├── contact.js
 │   │   ├── auth.js
 │   │   └── admin.js
@@ -1254,4 +1294,324 @@ On the patient's profile or a patient portal (if built), show a read-only view:
 - Sessions completed and remaining
 - Dates of all past visits
 - Linked payment receipt for reference
+
+---
+
+## 17. Appointment Booking & Doctor Availability
+
+Patients can view Dr. Neha's available time slots and book appointments online. This replaces the manual WhatsApp-based booking workflow with a transparent, self-service scheduling system. Multiple patients may need appointments at the same time — the system enforces slot capacity limits so patients only see genuinely available slots.
+
+### 17.1 Why This Matters
+
+- **For patients:** Transparency — see exactly when the doctor is available, no back-and-forth on WhatsApp. Book instantly, get confirmation.
+- **For the doctor:** No manual scheduling overhead — patients self-serve, the calendar fills up automatically. Reduces no-shows via reminders. Prevents overbooking.
+- **For the clinic:** Professional image, fewer missed appointments, better utilization of the doctor's time.
+
+### 17.2 Data Model
+
+Add to the Prisma schema (Section 6):
+
+```prisma
+model DoctorAvailability {
+  id            String   @id @default(cuid())
+  dayOfWeek     Int                // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime     String             // "09:00" (24-hour format)
+  endTime       String             // "18:00"
+  slotDuration  Int      @default(60)  // minutes per slot (e.g., 30, 45, 60)
+  maxPatients   Int      @default(1)   // max concurrent patients per slot (1 = single, >1 = group/batch)
+  sessionType   String   @default("In-Person")  // In-Person / Online / Home Visit
+  label         String?            // optional label, e.g., "Women's Health Batch", "General OPD"
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("doctor_availability")
+}
+
+model SlotOverride {
+  id            String   @id @default(cuid())
+  date          DateTime             // specific date this override applies to
+  startTime     String?              // if null + isBlocked=true → entire day blocked
+  endTime       String?
+  maxPatients   Int?                 // override capacity for this specific slot
+  isBlocked     Boolean  @default(false)  // true = doctor unavailable (holiday, leave, etc.)
+  reason        String?              // "Public Holiday", "Doctor on leave", etc.
+  createdAt     DateTime @default(now())
+
+  @@map("slot_overrides")
+}
+
+model Appointment {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  packageId     String?              // optional link to active treatment package
+  package       TreatmentPackage? @relation(fields: [packageId], references: [id])
+  appointmentDate DateTime           // the date of the appointment
+  startTime     String               // "09:00" (24-hour format)
+  endTime       String               // "10:00"
+  serviceType   String               // Physiotherapy, Consultation, Exercise Training, etc.
+  sessionType   String   @default("In-Person")  // In-Person / Online / Home Visit
+  status        String   @default("scheduled")   // scheduled | confirmed | completed | cancelled | no-show
+  notes         String?              // patient notes when booking
+  cancellationReason String?
+  cancelledAt   DateTime?
+  reminderSent  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([appointmentDate, startTime, patientId])  // prevent same patient booking same slot twice
+  @@map("appointments")
+}
+```
+
+**Required relation updates to existing models:**
+
+```prisma
+// Add to existing Patient model:
+model Patient {
+  // ... existing fields ...
+  appointments    Appointment[]      // ← NEW
+}
+
+// Add to existing TreatmentPackage model:
+model TreatmentPackage {
+  // ... existing fields ...
+  appointments    Appointment[]      // ← NEW (appointments linked to this package)
+}
+```
+
+### 17.3 Doctor Availability Management (Admin)
+
+Dr. Neha / staff configures weekly availability from the admin panel.
+
+#### Admin Page: `/admin/availability`
+
+**Weekly Schedule View:**
+- 7-day grid (Mon–Sun) showing configured time blocks
+- Each block shows: time range, slot duration, max patients, session type, label
+- Color-coded: green = active, grey = inactive
+- Add / Edit / Delete availability blocks per day
+
+**Add/Edit Availability Form:**
+- Day of Week — dropdown (Monday–Sunday)
+- Start Time — time picker (e.g., 09:00)
+- End Time — time picker (e.g., 13:00)
+- Slot Duration — dropdown (30 min / 45 min / 60 min)
+- Max Patients Per Slot — number input (default 1; use >1 for group batches like the 7PM Women's Health batch)
+- Session Type — In-Person / Online / Home Visit
+- Label — optional (e.g., "Morning OPD", "Women's Health Batch")
+- Active toggle — enable/disable without deleting
+
+**Slot Overrides Section:**
+- Calendar view of upcoming 30 days
+- Click a date to add an override:
+  - **Block entire day** — e.g., "Doctor on leave" (sets `isBlocked: true`, `startTime: null`)
+  - **Block specific slot** — e.g., "Unavailable 2PM–4PM on March 15"
+  - **Increase capacity** — e.g., "Allow 3 patients in 10AM slot on Saturday" (special camp day)
+- Visual indicators: red = blocked day, amber = modified slot
+
+**Example Configuration:**
+```
+Monday:     9:00–13:00 (60min slots, 1 patient each) + 16:00–19:00 (60min slots)
+Tuesday:    9:00–13:00 + 16:00–19:00
+Wednesday:  9:00–13:00 (morning only)
+Thursday:   9:00–13:00 + 16:00–19:00
+Friday:     9:00–13:00 + 16:00–19:00
+Saturday:   9:00–13:00 + 19:00–20:00 (Women's Health Batch, 8 max patients)
+Sunday:     CLOSED
+```
+
+### 17.4 Patient-Facing Booking Page (`/book`)
+
+The `/book` page (currently just a redirect to enrollment) becomes a full appointment booking interface.
+
+**Auto-Lookup from Enrollment:**
+- If URL has `?patientId=XXX` (from enrollment success), the patient is auto-looked up and the flow skips to Step 2 (Service selection). No manual entry needed.
+
+**Step 1 — Patient Identification:**
+- Search by Patient ID or Mobile Number (must be enrolled first)
+- Link to `/enroll` if not yet enrolled: "Not enrolled yet? Register here"
+- On successful lookup, patient's program and session type are pre-filled as defaults
+
+**Step 2 — Select Service:**
+- Radio cards for each service type: Physiotherapy, General Health & Fitness, Kids Exercise, Post-Surgery Rehab, Sports Injury, Elderly Care
+- Session type selection: In-Person / Online / Home Visit
+- Pre-fills from patient's enrollment data
+
+**Step 3 — Pick Date & Time (combined single step):**
+- **Calendar widget** (month view, navigable forward/backward)
+- Past dates are greyed out and not selectable
+- Clicking a date immediately fetches and displays available time slots below the calendar
+- **Time slot grid** appears inline below the calendar:
+  - Each slot shows: time range (e.g., "09:00 - 09:30"), availability count, batch label
+  - Color-coded: green = available, amber = 1 spot left, grey = full (disabled)
+  - Full slots shown but disabled for transparency
+- Blocked dates show the reason (e.g., "This date is unavailable")
+- Both date AND time must be selected before proceeding
+
+**Step 4 — Confirm Booking:**
+- Summary card showing: Patient Name, Patient ID, Service, Date, Time, Session Type
+- Optional notes field (e.g., "Knee pain has increased since last visit")
+- `[Confirm Appointment]` button → POST `/api/appointments`
+
+**Success Screen:**
+- Booking ID, appointment details summary
+- "Back to Home" and "Book Another" buttons
+
+### 17.5 API Routes
+
+```
+# Doctor Availability (admin, protected)
+GET    /api/admin/availability              → List all availability blocks
+POST   /api/admin/availability              → Create availability block
+PATCH  /api/admin/availability/:id          → Update availability block
+DELETE /api/admin/availability/:id          → Delete availability block
+
+# Slot Overrides (admin, protected)
+GET    /api/admin/slot-overrides            → List overrides (next 30 days)
+POST   /api/admin/slot-overrides            → Create override (block day/slot, adjust capacity)
+DELETE /api/admin/slot-overrides/:id        → Remove override
+
+# Available Slots (public, no auth — patients need to see this)
+GET    /api/slots?date=YYYY-MM-DD           → Get available slots for a specific date
+                                              Response: { date, slots: [{ startTime, endTime, capacity, booked, available, label, sessionType }] }
+GET    /api/slots/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD
+                                            → Get date-level availability summary for calendar view
+                                              Response: { dates: [{ date, totalSlots, availableSlots, status: "available"|"few"|"full"|"blocked", blockReason? }] }
+
+# Appointments (patient-facing, requires patient identification)
+POST   /api/appointments                    → Book an appointment
+                                              Body: { patientId, appointmentDate, startTime, endTime, serviceType, sessionType, notes? }
+                                              Validates: slot exists, not at capacity, patient doesn't already have this slot, date is in the future
+                                              Response: { appointmentId, bookingRef, message }
+GET    /api/appointments?patientId={id}     → List appointments for a patient (upcoming + past)
+GET    /api/appointments/:id                → Get appointment details
+PATCH  /api/appointments/:id/cancel         → Cancel appointment (must be ≥4 hours before)
+                                              Body: { reason? }
+PATCH  /api/appointments/:id/reschedule     → Reschedule to a new slot
+                                              Body: { newDate, newStartTime, newEndTime }
+
+# Appointments (admin, protected)
+GET    /api/admin/appointments              → List all appointments (paginated, filterable by date, status, patient)
+GET    /api/admin/appointments/today        → Today's appointment list (the daily schedule view)
+PATCH  /api/admin/appointments/:id          → Update status (confirm, complete, mark no-show)
+                                              Body: { status, notes? }
+GET    /api/admin/appointments/stats        → Appointment stats (total today, upcoming, no-show rate, cancellation rate)
+```
+
+### 17.6 Slot Generation Logic
+
+Available slots are computed at request time (not pre-generated):
+
+```
+1. Get DoctorAvailability for the requested date's dayOfWeek (where isActive = true)
+2. Check SlotOverrides for the specific date:
+   - If entire day is blocked → return empty (with blockReason)
+   - If specific slots are blocked → exclude those time ranges
+   - If capacity overrides exist → apply them
+3. Generate time slots from availability windows using slotDuration
+   Example: startTime=09:00, endTime=13:00, duration=60min → [09:00, 10:00, 11:00, 12:00]
+4. For each generated slot, count existing Appointments with status != 'cancelled'
+5. available = maxPatients − booked
+6. Return slots with capacity info
+```
+
+**Concurrency handling:** Use a database-level unique constraint + transaction when creating appointments. If two patients try to book the last slot simultaneously, the second insert fails gracefully with a "slot no longer available" message.
+
+### 17.7 Appointment Calendar View (Admin Dashboard)
+
+Add to the admin dashboard (`/admin/dashboard`):
+
+**New Stat Cards:**
+- **Appointments Today** — count of today's appointments (status: scheduled + confirmed)
+- **Upcoming This Week** — total appointments in the next 7 days
+
+**Today's Schedule Section** (prominent, shown near top):
+- Timeline view of today's appointments:
+  ```
+  09:00 AM  Rajesh Kumar (RF-0012) — Physiotherapy     [Confirmed ✓]
+  10:00 AM  Priya Sharma (RF-0045) — Post-Surgery Rehab [Scheduled]
+  11:00 AM  — Available —
+  12:00 PM  Amit Patel (RF-0023) — Sports Injury        [Scheduled]
+  ...
+  ```
+- Each row: Time | Patient Name + ID | Service | Status badge | Actions (Confirm, Complete, No-show, Cancel)
+- Empty slots shown as "— Available —" in grey
+- Quick "Mark Visit" action on confirmed appointments → records visit in the patient's active package AND updates appointment status to `completed`
+
+**Weekly Calendar View** (optional, linked from dashboard):
+- Full-page calendar at `/admin/calendar`
+- Week view with time slots on Y-axis, days on X-axis
+- Appointments shown as colored blocks (green=confirmed, blue=scheduled, red=cancelled, grey=completed)
+- Click any empty slot to create an appointment for a walk-in patient
+- Click any appointment to view details or update status
+
+### 17.8 Integration with Existing Systems
+
+**With Visit Tracking (Section 16):**
+- When an appointment is marked `completed`, optionally auto-record a visit in the patient's active treatment package
+- The "Mark Visit" button in the appointment view calls both `PATCH /api/admin/appointments/:id` (status→completed) and `POST /api/admin/packages/:id/visits` in sequence
+- If the patient has no active package, prompt: "Patient has no active package. Record visit anyway?" → creates an unlinked visit note
+
+**With Patient Enrollment (Section 4.2):**
+- The enrollment form's `preferredDays` and `preferredTime` fields are used as **suggested defaults** when the patient first visits `/book` — pre-selecting their preferred day and time range
+- After enrollment, the confirmation screen adds: "Book your first appointment →" linking to `/book?patientId={id}`
+
+**With Dashboard (Section 13.2):**
+- Add `appointmentsToday` and `upcomingAppointments` to the dashboard stats API response
+- Add "Today's Schedule" section to the dashboard (see 17.7)
+
+**With Patients List (Section 13.3):**
+- Add **"Next Appt"** column to the patients table showing the patient's next upcoming appointment date/time, or "—" if none
+- Clicking the date opens the appointment details
+
+### 17.9 Notifications (Future Enhancement)
+
+When implemented, the notification system should support:
+
+- **Booking confirmation** — SMS/email immediately after booking with appointment details
+- **Reminder** — SMS/WhatsApp 24 hours before the appointment
+- **Cancellation notice** — notify doctor when a patient cancels
+- **No-show follow-up** — automated message to patient after a no-show: "We missed you today. Would you like to reschedule?"
+
+For now, the WhatsApp CTA can link to a pre-filled message:
+```
+https://wa.me/919900911795?text=Hi%20Dr.%20Neha%2C%20I%20just%20booked%20an%20appointment%20for%20{date}%20at%20{time}.
+```
+
+### 17.10 Business Rules
+
+- **Enrolled patients only** — a patient must be enrolled (have a Patient ID) before booking an appointment. The booking page links to `/enroll` for new patients.
+- **Booking window** — patients can book appointments up to 30 days in advance, minimum 2 hours before the slot start time.
+- **Cancellation policy** — patients can cancel up to 4 hours before the appointment. After that, cancellation requires calling the clinic.
+- **No-show tracking** — if a patient doesn't show up, staff marks the appointment as `no-show`. Repeated no-shows (≥3) trigger a flag on the patient profile.
+- **One active appointment per slot per patient** — a patient cannot book the same date+time twice.
+- **Slot capacity enforcement** — bookings are rejected once `booked >= maxPatients` for a slot. For group sessions (like the 7PM Women's Health batch), `maxPatients` can be set higher (e.g., 8–10).
+- **Walk-ins** — staff can create appointments for walk-in patients directly from the admin calendar, even for the current time slot.
+- **Rescheduling** — treated as cancel + re-book in a single transaction. The old slot opens up, the new slot gets booked.
+- **Completed appointments** — when staff marks an appointment as `completed`, it optionally auto-records a visit in the linked treatment package (if any).
+
+### 17.11 Site Architecture Update
+
+Add to the site architecture (Section 3):
+
+```
+/book                      → Appointment Booking (patient-facing: select service → date → time → confirm)
+/admin/availability        → Doctor Availability Management (configure weekly schedule, overrides)
+/admin/calendar            → Appointment Calendar View (weekly timeline, manage appointments)
+```
+
+### 17.12 UI Components
+
+| Component | Purpose |
+|---|---|
+| `<SlotPicker />` | Date + time slot selection grid for patients |
+| `<AvailabilityCalendar />` | Monthly calendar showing available/full/blocked days |
+| `<DailySchedule />` | Timeline view of today's appointments for admin dashboard |
+| `<WeeklyCalendar />` | Full week view with appointment blocks for admin |
+| `<AvailabilityEditor />` | Weekly schedule configuration form for admin |
+| `<SlotOverrideForm />` | Block/modify specific dates or slots |
+| `<AppointmentCard />` | Patient name, time, service, status badge, action buttons |
+| `<BookingConfirmation />` | Summary card after successful booking |
 

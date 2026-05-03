@@ -1,17 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Users, IndianRupee, TrendingUp, Clock, UserPlus, AlertCircle, Package, CalendarCheck, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Users, IndianRupee, TrendingUp, Clock, UserPlus, AlertCircle, Package, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getDashboard } from '../../lib/api'
 
-function StatCard({ icon: Icon, label, value, sub, color }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="card p-5"
-    >
+function StatCard({ icon: Icon, label, value, sub, color, to }) {
+  const content = (
+    <>
       <div className="flex items-start justify-between mb-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center`} style={{ background: color + '18' }}>
           <Icon size={20} style={{ color }} />
@@ -20,6 +16,17 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
       </div>
       <div className="font-accent font-bold text-3xl text-navy">{value}</div>
       <div className="text-muted text-sm mt-0.5">{label}</div>
+    </>
+  )
+  return to ? (
+    <Link to={to}>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="card p-5 hover:shadow-md hover:border-teal/30 transition-all cursor-pointer">
+        {content}
+      </motion.div>
+    </Link>
+  ) : (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="card p-5">
+      {content}
     </motion.div>
   )
 }
@@ -105,15 +112,16 @@ export default function Dashboard() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Users}        color="#1B2F5E" label="Total Patients"        value={fmt(data.totalPatients)}         />
-        <StatCard icon={UserPlus}     color="#1A7F8E" label="New Today"             value={fmt(data.newPatientsToday)}       />
-        <StatCard icon={TrendingUp}   color="#059669" label={`Patients — ${monthLabel}`} value={fmt(data.newPatientsThisMonth)} />
-        <StatCard icon={IndianRupee}  color="#E8630A" label="Total Revenue"         value={`₹${fmt(data.totalRevenue)}`}     />
-        <StatCard icon={IndianRupee}  color="#F5A623" label="Revenue Today"         value={`₹${fmt(data.revenueToday)}`}     />
-        <StatCard icon={TrendingUp}   color="#10B981" label={`Revenue — ${monthLabel}`} value={`₹${fmt(data.revenueThisMonth)}`} />
-        <StatCard icon={Clock}        color="#BE185D" label="Pending Payments"      value={fmt(data.pendingPaymentsCount)}  sub={data.patientsWithNoPayments ? `₹${fmt(data.pendingPaymentsValue)} · ${data.patientsWithNoPayments} unpaid` : `₹${fmt(data.pendingPaymentsValue)}`} />
-        <StatCard icon={Package}      color="#7C3AED" label="Active Packages"       value={fmt(data.activePackages)}        />
-        <StatCard icon={CalendarCheck} color="#0891B2" label="Visits Today"          value={fmt(data.visitsToday)}           />
+        <StatCard icon={Users}        color="#1B2F5E" label="Total Patients"        value={fmt(data.totalPatients)}         to="/admin/patients" />
+        <StatCard icon={UserPlus}     color="#1A7F8E" label="New Today"             value={fmt(data.newPatientsToday)}       to="/admin/patients" />
+        <StatCard icon={TrendingUp}   color="#059669" label={`Patients — ${monthLabel}`} value={fmt(data.newPatientsThisMonth)} to="/admin/patients" />
+        <StatCard icon={IndianRupee}  color="#E8630A" label="Total Revenue"         value={`₹${fmt(data.totalRevenue)}`}     to="/admin/payments" />
+        <StatCard icon={IndianRupee}  color="#F5A623" label="Revenue Today"         value={`₹${fmt(data.revenueToday)}`}     to="/admin/payments" />
+        <StatCard icon={TrendingUp}   color="#10B981" label={`Revenue — ${monthLabel}`} value={`₹${fmt(data.revenueThisMonth)}`} to="/admin/payments" />
+        <StatCard icon={Clock}        color="#BE185D" label="Pending Payments"      value={fmt(data.pendingPaymentsCount)}  sub={data.patientsWithNoPayments ? `₹${fmt(data.pendingPaymentsValue)} · ${data.patientsWithNoPayments} unpaid` : `₹${fmt(data.pendingPaymentsValue)}`} to="/admin/payments" />
+        <StatCard icon={Package}      color="#7C3AED" label="Active Packages"       value={fmt(data.activePackages)}        to="/admin/patients" />
+        <StatCard icon={CalendarCheck} color="#0891B2" label="Visits Today"          value={fmt(data.visitsToday)}           to="/admin/patients" />
+        <StatCard icon={CalendarDays}  color="#2563EB" label="Appointments Today"   value={fmt(data.appointmentsToday)}     to="/admin/appointments" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -172,6 +180,37 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Today's Schedule */}
+      {data.todaysSchedule?.length > 0 && (
+        <div className="card p-6 mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display font-semibold text-navy flex items-center gap-2">
+              <CalendarDays size={18} className="text-blue-500" /> Today's Schedule
+            </h2>
+            <Link to="/admin/appointments" className="text-teal text-sm hover:underline">View all</Link>
+          </div>
+          <div className="space-y-3">
+            {data.todaysSchedule.map((a) => (
+              <div key={a.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-mono font-semibold text-teal w-24">{a.startTime} - {a.endTime}</div>
+                  <div>
+                    <div className="font-medium text-navy text-sm">{a.patient?.fullName || '—'}</div>
+                    <div className="text-muted text-xs">{a.serviceType} · {a.sessionType}</div>
+                  </div>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
+                  a.status === 'booked' ? 'bg-blue-100 text-blue-700' :
+                  a.status === 'completed' ? 'bg-green-100 text-green-700' :
+                  a.status === 'no-show' ? 'bg-amber-100 text-amber-700' :
+                  'bg-gray-100 text-gray-600'
+                }`}>{a.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Packages Needing Attention */}
       {data.attentionPackages?.length > 0 && (
