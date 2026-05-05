@@ -2,6 +2,16 @@
 
 Use this skill whenever code changes need to be pushed to the live server at http://187.127.147.87.
 
+## Architecture
+
+| Service | Image | Port | Base |
+|---------|-------|------|------|
+| **db** | PostgreSQL 16-alpine | 5432 | — |
+| **server** | `rajesh6601/refunction-server` | 4000 | Node 20-alpine |
+| **client** | `rajesh6601/refunction-client` | 80 | Nginx 1.27-alpine (multi-stage Vite build) |
+
+**Database Models (10):** Patient, Payment, ContactInquiry, Staff, Testimonial, TreatmentPackage, PatientVisit, DoctorAvailability, SlotOverride, Appointment
+
 ## Prerequisites (one-time setup on your machine)
 - Docker Desktop installed and running
 - Logged into Docker Hub: `docker login` (username: `rajesh6601`)
@@ -117,6 +127,20 @@ sshpass -p 'R@jeshshukl@123' ssh -o StrictHostKeyChecking=no \
 - **Frontend:** http://187.127.147.87
 - **API:** http://187.127.147.87:4000
 
+## Environment Variables (Production)
+
+Set these in `/opt/refunction/.env` on the VPS:
+
+| Variable | Purpose |
+|----------|---------|
+| `DB_USER` / `DB_PASSWORD` / `DB_NAME` | PostgreSQL credentials |
+| `DATABASE_URL` | Full Prisma connection string |
+| `JWT_SECRET` | Auth token signing (min 32 chars) |
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Payment gateway |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Email notifications |
+| `CLOUDINARY_URL` | File/image storage |
+| `VITE_API_URL` | Client API base (use `/api` in production) |
+
 ---
 
 ## Common Issues
@@ -129,4 +153,34 @@ sshpass -p 'R@jeshshukl@123' ssh -o StrictHostKeyChecking=no \
 
 **"Failed to enroll patient" / Null constraint violation** — A Prisma schema change was made but the migration file wasn't included in the build. Ensure the migration folder exists under `server/prisma/migrations/` before building the image.
 
-**Migration not applied on VPS** — The server container runs `prisma migrate deploy` on startup automatically. If migrations are missing, it means the migration file wasn't in the image. Repeat Step 1 and 3.
+**Migration not applied on VPS** — The server container runs `prisma migrate deploy` on startup automatically (via `npx prisma migrate deploy && node src/index.js` in Dockerfile CMD). If migrations are missing, it means the migration file wasn't in the image. Repeat Step 1 and 3.
+
+**Container health check failing** — The `db` service has a health check (`pg_isready`). The server won't start until the DB is healthy. If the server keeps restarting, check DB logs first: `docker logs refunction_db --tail 20`.
+
+**Nginx 502 Bad Gateway** — The client container can't reach the server. Verify the server container is running and healthy. The nginx config proxies `/api/` to `http://server:4000` using Docker's internal DNS.
+
+---
+
+## Server Startup Flow (Dockerfile CMD)
+
+```
+npx prisma migrate deploy → node src/index.js
+```
+
+1. All pending migrations are applied automatically on container start
+2. Express server starts on port 4000
+3. If migration fails, the server won't start — check logs
+
+---
+
+## Key Tech Versions
+
+| Component | Version |
+|-----------|---------|
+| Node.js | 20-alpine |
+| PostgreSQL | 16-alpine |
+| Nginx | 1.27-alpine |
+| Prisma | ^5.22.0 |
+| React | ^19.2.5 |
+| Vite | ^8.0.9 |
+| Tailwind CSS | ^3.4.19 |

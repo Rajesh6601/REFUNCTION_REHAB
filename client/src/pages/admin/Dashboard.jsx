@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Users, IndianRupee, TrendingUp, Clock, UserPlus, AlertCircle, Package, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Users, IndianRupee, TrendingUp, Clock, UserPlus, AlertCircle, Package, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getDashboard } from '../../lib/api'
 
@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [error, setError]     = useState('')
   const [month, setMonth]     = useState(now.getMonth())   // 0-indexed
   const [year, setYear]       = useState(now.getFullYear())
+  const [showRevenue, setShowRevenue] = useState(false)
 
   const isCurrentMonth = month === now.getMonth() && year === now.getFullYear()
 
@@ -115,7 +116,24 @@ export default function Dashboard() {
         <StatCard icon={Users}        color="#1B2F5E" label="Total Patients"        value={fmt(data.totalPatients)}         to="/admin/patients" />
         <StatCard icon={UserPlus}     color="#1A7F8E" label="New Today"             value={fmt(data.newPatientsToday)}       to="/admin/patients" />
         <StatCard icon={TrendingUp}   color="#059669" label={`Patients — ${monthLabel}`} value={fmt(data.newPatientsThisMonth)} to="/admin/patients" />
-        <StatCard icon={IndianRupee}  color="#E8630A" label="Total Revenue"         value={`₹${fmt(data.totalRevenue)}`}     to="/admin/payments" />
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          className="card p-5 cursor-pointer hover:shadow-md hover:border-teal/30 transition-all"
+          onClick={() => setShowRevenue(v => !v)}
+        >
+          <div className="flex items-start justify-between mb-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#E8630A18' }}>
+              <IndianRupee size={20} style={{ color: '#E8630A' }} />
+            </div>
+            {showRevenue
+              ? <EyeOff size={16} className="text-muted mt-1" />
+              : <Eye size={16} className="text-muted mt-1" />}
+          </div>
+          <div className="font-accent font-bold text-3xl text-navy">
+            {showRevenue ? `₹${fmt(data.totalRevenue)}` : '₹•••••'}
+          </div>
+          <div className="text-muted text-sm mt-0.5">Total Revenue</div>
+        </motion.div>
         <StatCard icon={IndianRupee}  color="#F5A623" label="Revenue Today"         value={`₹${fmt(data.revenueToday)}`}     to="/admin/payments" />
         <StatCard icon={TrendingUp}   color="#10B981" label={`Revenue — ${monthLabel}`} value={`₹${fmt(data.revenueThisMonth)}`} to="/admin/payments" />
         <StatCard icon={Clock}        color="#BE185D" label="Pending Payments"      value={fmt(data.pendingPaymentsCount)}  sub={data.patientsWithNoPayments ? `₹${fmt(data.pendingPaymentsValue)} · ${data.patientsWithNoPayments} unpaid` : `₹${fmt(data.pendingPaymentsValue)}`} to="/admin/payments" />
