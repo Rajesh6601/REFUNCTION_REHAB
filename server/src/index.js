@@ -16,6 +16,9 @@ const { startAnalyticsJobs } = require('./lib/analyticsAggregator')
 const app  = express()
 const PORT = process.env.PORT || 4000
 
+// Trust proxy (behind Traefik / nginx reverse proxy)
+app.set('trust proxy', 1)
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
