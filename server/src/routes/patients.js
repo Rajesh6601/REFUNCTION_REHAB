@@ -139,7 +139,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
       emergencyName, emergencyPhone, emergencyRelation,
       program, sessionType, preferredDays, preferredTime,
       conditions, fitnessGoals, fitnessLevel, referralSource,
-      paymentPreference, enrolledAt,
+      paymentPreference, enrolledAt, registrationStatus,
     } = req.body
 
     const data = {}
@@ -168,6 +168,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     if (referralSource !== undefined)    data.referralSource    = referralSource || null
     if (paymentPreference !== undefined) data.paymentPreference = paymentPreference || null
     if (enrolledAt !== undefined)        data.enrolledAt        = new Date(enrolledAt)
+    if (registrationStatus !== undefined) data.registrationStatus = registrationStatus
 
     const patient = await prisma.patient.update({
       where: { id },

@@ -269,7 +269,12 @@ export default function AdminPatients() {
               ) : data.patients.map((p) => (
                 <tr key={p.id} className="border-b border-gray-50 hover:bg-light transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-muted">{p.id}</td>
-                  <td className="px-4 py-3 font-medium text-navy whitespace-nowrap">{p.fullName}</td>
+                  <td className="px-4 py-3 font-medium text-navy whitespace-nowrap">
+                    {p.fullName}
+                    {p.registrationStatus === 'quick' && (
+                      <span className="ml-1.5 text-xs bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">Quick</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted whitespace-nowrap">{p.age} / {p.gender}</td>
                   <td className="px-4 py-3 text-muted">{p.mobile}</td>
                   <td className="px-4 py-3">

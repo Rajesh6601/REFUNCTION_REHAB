@@ -33,6 +33,7 @@ router.get('/dashboard', async (req, res) => {
       appointmentsToday,
       todaysSchedule,
       visitorsToday,
+      incompleteRegistrations,
     ] = await Promise.all([
       prisma.patient.count(),
       prisma.patient.count({ where: { enrolledAt: { gte: todayStart } } }),
@@ -92,6 +93,8 @@ router.get('/dashboard', async (req, res) => {
         distinct: ['visitorId'],
         select: { visitorId: true },
       }).then(rows => rows.length).catch(() => 0),
+      // Incomplete (quick) registrations
+      prisma.patient.count({ where: { registrationStatus: 'quick' } }),
     ])
 
     // Packages needing attention: active with <=2 sessions remaining
@@ -143,6 +146,7 @@ router.get('/dashboard', async (req, res) => {
       appointmentsToday,
       todaysSchedule,
       visitorsToday,
+      incompleteRegistrations,
     })
   } catch (err) {
     console.error('[admin dashboard]', err)
@@ -334,7 +338,7 @@ router.get('/patients', async (req, res) => {
         take:  limit,
         select: {
           id: true, fullName: true, mobile: true, age: true, gender: true,
-          program: true, sessionType: true, city: true, enrolledAt: true,
+          program: true, sessionType: true, city: true, enrolledAt: true, registrationStatus: true,
           _count: { select: { payments: true } },
           packages: {
             where: { status: 'active' },

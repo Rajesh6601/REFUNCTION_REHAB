@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, AlertCircle } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getPatient, updatePatient } from '../../lib/api'
 
@@ -37,6 +37,7 @@ export default function EditPatient() {
   const [loading, setLoading]       = useState(true)
   const [saving, setSaving]         = useState(false)
   const [error, setError]           = useState('')
+  const [regStatus, setRegStatus]   = useState('full')
 
   useEffect(() => {
     ;(async () => {
@@ -70,6 +71,7 @@ export default function EditPatient() {
         setDays(p.preferredDays || [])
         setConditions(p.conditions || [])
         setGoals(p.fitnessGoals || [])
+        setRegStatus(p.registrationStatus || 'full')
       } catch {
         setError('Failed to load patient')
       } finally {
@@ -95,6 +97,7 @@ export default function EditPatient() {
         preferredDays,
         conditions,
         fitnessGoals: goals,
+        registrationStatus: 'full',
       })
       navigate('/admin/patients')
     } catch (err) {
@@ -136,6 +139,15 @@ export default function EditPatient() {
         {error && (
           <div className="mb-5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
             {error}
+          </div>
+        )}
+
+        {regStatus === 'quick' && (
+          <div className="mb-5 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
+            <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-500" />
+            <div>
+              <span className="font-semibold">Incomplete Registration</span> — This patient used quick registration during booking. Please review and complete their details. Saving will mark their registration as complete.
+            </div>
           </div>
         )}
 

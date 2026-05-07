@@ -1,6 +1,15 @@
 const router      = require('express').Router()
 const prisma      = require('../lib/prisma')
+const rateLimit   = require('express-rate-limit')
 const { requireAuth } = require('../middleware/auth')
+
+const quickRegLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts. Please try again in a minute.' },
+})
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function generateSlots(startTime, endTime, duration) {
@@ -132,6 +141,82 @@ router.post('/lookup', async (req, res) => {
   } catch (err) {
     console.error('[appointments lookup]', err)
     res.status(500).json({ error: 'Lookup failed' })
+  }
+})
+
+// ─── PUBLIC: POST /api/appointments/quick-register ──────────────────────────
+router.post('/quick-register', quickRegLimiter, async (req, res) => {
+  try {
+    const { fullName, mobile, gender, age } = req.body
+
+    // Validate required fields
+    if (!fullName || !mobile || !gender || age === undefined || age === null || age === '') {
+      return res.status(400).json({ error: 'All fields are required: fullName, mobile, gender, age' })
+    }
+    if (fullName.trim().length < 2) {
+      return res.status(400).json({ error: 'Name must be at least 2 characters' })
+    }
+    if (!/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({ error: 'Mobile must be exactly 10 digits' })
+    }
+    const allowedGenders = ['Male', 'Female', 'Other', 'Prefer not to say']
+    if (!allowedGenders.includes(gender)) {
+      return res.status(400).json({ error: `Gender must be one of: ${allowedGenders.join(', ')}` })
+    }
+    const ageNum = parseInt(age)
+    if (isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
+      return res.status(400).json({ error: 'Age must be between 1 and 120' })
+    }
+
+    // Check if mobile already exists — return existing patient (idempotent)
+    const existing = await prisma.patient.findUnique({
+      where: { mobile },
+      select: { id: true, fullName: true, mobile: true, program: true, sessionType: true, preferredTime: true },
+    })
+    if (existing) return res.status(200).json(existing)
+
+    // Generate Patient ID via same sequence as enrollment
+    const [{ nextval }] = await prisma.$queryRaw`SELECT nextval('patient_serial_seq')`
+    const patientId = `RF-${String(nextval).padStart(4, '0')}`
+
+    const patient = await prisma.patient.create({
+      data: {
+        id:                 patientId,
+        fullName:           fullName.trim(),
+        mobile,
+        gender,
+        age:                ageNum,
+        program:            [],
+        sessionType:        'In-Person',
+        preferredDays:      [],
+        preferredTime:      '',
+        conditions:         [],
+        fitnessGoals:       [],
+        painAreas:          [],
+        consentGiven:       false,
+        registrationStatus: 'quick',
+      },
+    })
+
+    res.status(201).json({
+      id:            patient.id,
+      fullName:      patient.fullName,
+      mobile:        patient.mobile,
+      program:       patient.program,
+      sessionType:   patient.sessionType,
+      preferredTime: patient.preferredTime,
+    })
+  } catch (err) {
+    // Handle race condition: another request created the same mobile concurrently
+    if (err.code === 'P2002') {
+      const existing = await prisma.patient.findUnique({
+        where: { mobile: req.body.mobile },
+        select: { id: true, fullName: true, mobile: true, program: true, sessionType: true, preferredTime: true },
+      })
+      if (existing) return res.status(200).json(existing)
+    }
+    console.error('[quick-register]', err)
+    res.status(500).json({ error: 'Registration failed' })
   }
 })
 

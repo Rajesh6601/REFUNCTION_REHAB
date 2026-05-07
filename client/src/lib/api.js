@@ -77,6 +77,7 @@ export const deleteTestimonial      = (id)     => api.delete(`/testimonials/admi
 // ─── Appointments (Public) ─────────────────────────────────────────────────
 export const getAvailableSlots  = (date)     => api.get('/appointments/slots', { params: { date } })
 export const lookupPatient      = (q)        => api.post('/appointments/lookup', { q })
+export const quickRegister      = (data)     => api.post('/appointments/quick-register', data)
 export const createAppointment  = (data)     => api.post('/appointments', data)
 export const cancelAppointment  = (id, data) => api.patch(`/appointments/${id}/cancel`, data)
 

@@ -44,6 +44,7 @@ model Patient {
   paymentPreference String?
   consentGiven      Boolean   @default(false)
   signature         String?
+  registrationStatus String  @default("full")
   enrolledAt        DateTime  @default(now())
   payments          Payment[]
   packages          TreatmentPackage[]

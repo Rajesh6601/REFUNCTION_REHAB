@@ -116,6 +116,9 @@ export default function Dashboard() {
         <StatCard icon={Users}        color="#1B2F5E" label="Total Patients"        value={fmt(data.totalPatients)}         to="/admin/patients" />
         <StatCard icon={UserPlus}     color="#1A7F8E" label="New Today"             value={fmt(data.newPatientsToday)}       to="/admin/patients" />
         <StatCard icon={TrendingUp}   color="#059669" label={`Patients — ${monthLabel}`} value={fmt(data.newPatientsThisMonth)} to="/admin/patients" />
+        {data.incompleteRegistrations > 0 && (
+          <StatCard icon={UserPlus} color="#D97706" label="Incomplete Registrations" value={fmt(data.incompleteRegistrations)} sub="Quick-reg" to="/admin/patients" />
+        )}
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           className="card p-5 cursor-pointer hover:shadow-md hover:border-teal/30 transition-all"

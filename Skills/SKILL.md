@@ -1615,3 +1615,442 @@ Add to the site architecture (Section 3):
 | `<AppointmentCard />` | Patient name, time, service, status badge, action buttons |
 | `<BookingConfirmation />` | Summary card after successful booking |
 
+## 18. Website Traffic & Visitor Analytics
+
+Track how many users visit the public-facing website hosted on the VPS. This is a lightweight, self-hosted, privacy-friendly analytics system — no third-party scripts (no Google Analytics, no cookies, no GDPR consent banner needed).
+
+### 18.1 Goals
+
+- Track **unique visitors** and **total page views** per day/week/month
+- Show which **pages** are most visited (Home, Services, Enroll, Contact, Book, etc.)
+- Show **referrer sources** (direct, Google, social media, WhatsApp links)
+- Show **device type** breakdown (mobile vs desktop)
+- Display analytics in a new **admin dashboard card** and a dedicated **admin analytics page**
+- Zero impact on page load speed — tracking is server-side via API middleware, not a client-side script
+
+### 18.2 Approach — Server-Side Middleware + Lightweight Client Beacon
+
+Use a hybrid approach:
+1. **Server-side middleware** on the Express API to log every request with metadata (IP hash, user-agent, referrer, path, timestamp)
+2. **Lightweight client beacon** — a single `POST /api/track` call on each page navigation (captured via React Router) to log SPA page views that don't hit the server
+
+This avoids the limitations of pure nginx log parsing (no SPA route visibility) and pure client-side tracking (blocked by ad-blockers).
+
+### 18.3 Database Schema — New Models
+
+```prisma
+model PageView {
+  id          String   @id @default(cuid())
+  visitorId   String               // hashed IP + user-agent (anonymous, no PII)
+  path        String               // e.g. "/services/physiotherapy"
+  referrer    String?              // e.g. "https://google.com", "direct"
+  userAgent   String?              // raw user-agent string
+  deviceType  String?              // "mobile", "desktop", "tablet"
+  browser     String?              // "Chrome", "Safari", "Firefox", etc.
+  country     String?              // optional, from IP geolocation (free API)
+  sessionId   String?              // groups page views into sessions (30-min window)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([visitorId])
+  @@index([path])
+}
+
+model DailyStats {
+  id             String   @id @default(cuid())
+  date           DateTime @unique @db.Date  // one row per day
+  uniqueVisitors Int      @default(0)
+  totalPageViews Int      @default(0)
+  topPages       Json?    // [{ path: "/", views: 120 }, ...]
+  topReferrers   Json?    // [{ source: "google.com", count: 45 }, ...]
+  deviceBreakdown Json?   // { mobile: 60, desktop: 35, tablet: 5 }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+```
+
+### 18.4 API Endpoints
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| `POST` | `/api/track` | None | Client beacon — logs a page view (rate-limited to 1 req/sec per IP) |
+| `GET` | `/api/admin/analytics/summary` | Admin JWT | Dashboard summary: today's visitors, page views, top pages, 7-day trend |
+| `GET` | `/api/admin/analytics/daily` | Admin JWT | Daily stats for a date range (`?from=&to=`), returns `DailyStats[]` |
+| `GET` | `/api/admin/analytics/pages` | Admin JWT | Top pages for a date range, sorted by views |
+| `GET` | `/api/admin/analytics/referrers` | Admin JWT | Top referrer sources for a date range |
+
+### 18.5 POST /api/track — Client Beacon
+
+**Request body:**
+```json
+{
+  "path": "/services/physiotherapy",
+  "referrer": "https://google.com"
+}
+```
+
+**Server extracts from request headers:**
+- `req.ip` or `X-Real-IP` (from nginx proxy) → hashed with a daily-rotating salt for anonymity
+- `User-Agent` → parsed for device type and browser name
+- Referrer fallback from `Referer` header if not in body
+
+**Rate limiting:** Max 60 requests per minute per IP (express-rate-limit). Reject with 429 if exceeded.
+
+**Response:** `204 No Content` (fire-and-forget from client)
+
+### 18.6 Client-Side Integration
+
+In the React app, add a `usePageTracking` hook that fires on every route change:
+
+```jsx
+// client/src/hooks/usePageTracking.js
+import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+import axios from 'axios'
+
+export default function usePageTracking() {
+  const location = useLocation()
+
+  useEffect(() => {
+    // Don't track admin pages
+    if (location.pathname.startsWith('/admin')) return
+
+    axios.post('/api/track', {
+      path: location.pathname,
+      referrer: document.referrer || 'direct',
+    }).catch(() => {}) // fire-and-forget, never block UI
+  }, [location.pathname])
+}
+```
+
+Place the hook in `App.jsx` inside the `<BrowserRouter>`:
+```jsx
+function AppRoutes() {
+  usePageTracking()
+  return <Routes>...</Routes>
+}
+```
+
+### 18.7 Server Middleware — Visitor Hashing
+
+```js
+// server/src/middleware/analytics.js
+const crypto = require('crypto')
+
+// Rotate salt daily so visitor IDs can't be tracked across days
+let currentSalt = crypto.randomBytes(16).toString('hex')
+let saltDate = new Date().toDateString()
+
+function getVisitorId(ip, userAgent) {
+  const today = new Date().toDateString()
+  if (today !== saltDate) {
+    currentSalt = crypto.randomBytes(16).toString('hex')
+    saltDate = today
+  }
+  return crypto.createHash('sha256')
+    .update(`${ip}:${userAgent}:${currentSalt}`)
+    .digest('hex')
+    .substring(0, 16)
+}
+
+function parseDeviceType(ua) {
+  if (!ua) return 'unknown'
+  if (/mobile|android|iphone|ipad/i.test(ua)) return /ipad|tablet/i.test(ua) ? 'tablet' : 'mobile'
+  return 'desktop'
+}
+
+function parseBrowser(ua) {
+  if (!ua) return 'unknown'
+  if (/edg/i.test(ua)) return 'Edge'
+  if (/chrome|crios/i.test(ua)) return 'Chrome'
+  if (/firefox|fxios/i.test(ua)) return 'Firefox'
+  if (/safari/i.test(ua)) return 'Safari'
+  if (/opera|opr/i.test(ua)) return 'Opera'
+  return 'Other'
+}
+```
+
+### 18.8 Daily Stats Aggregation
+
+Run a scheduled aggregation (cron job or on-demand) that rolls up `PageView` rows into `DailyStats`:
+
+```js
+// server/src/jobs/aggregateStats.js
+// Runs once daily (e.g., via setInterval or node-cron at midnight)
+// 1. Count distinct visitorId for the day → uniqueVisitors
+// 2. Count total PageView rows for the day → totalPageViews
+// 3. Group by path, order by count desc, take top 10 → topPages
+// 4. Group by referrer domain, order by count desc, take top 10 → topReferrers
+// 5. Group by deviceType → deviceBreakdown
+// 6. Upsert into DailyStats for that date
+```
+
+Also **purge raw `PageView` rows** older than 90 days to keep the database lean. `DailyStats` rows are kept indefinitely since they're small.
+
+### 18.9 Admin Dashboard Integration
+
+Add a new stat card on the Dashboard (`Dashboard.jsx`):
+
+```
+<StatCard icon={BarChart3} color="#6366F1" label="Visitors Today" value={fmt(data.visitorsToday)} to="/admin/analytics" />
+```
+
+The `/api/admin/dashboard` endpoint should include two new fields:
+```json
+{
+  "visitorsToday": 42,
+  "pageViewsToday": 187
+}
+```
+
+### 18.10 Admin Analytics Page — `/admin/analytics`
+
+A dedicated page with:
+
+| Section | Content |
+|---------|---------|
+| **Summary cards** | Visitors today, page views today, avg. session duration, bounce rate |
+| **Visitors chart** | Line chart (7-day or 30-day) of unique visitors per day |
+| **Top pages** | Bar chart or table of top 10 visited pages |
+| **Referrer sources** | Pie chart: Direct, Google, WhatsApp, Social, Other |
+| **Device breakdown** | Donut chart: Mobile vs Desktop vs Tablet |
+| **Date range picker** | Filter all data by custom from/to dates |
+
+Use a lightweight chart library — **recharts** (already React-friendly, ~45KB gzipped) or plain SVG/CSS bars to avoid heavy dependencies.
+
+### 18.11 Nginx Config Update
+
+Forward the real client IP to Express so visitor hashing works behind the nginx reverse proxy:
+
+```nginx
+# Add to the /api/ location block in nginx.conf
+proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+```
+
+Note: `X-Real-IP` is already set in the current config. Express should use `app.set('trust proxy', 1)` to read `X-Forwarded-For` correctly.
+
+### 18.12 Privacy & Performance
+
+- **No cookies** — visitor identity is a hashed IP+UA with a daily-rotating salt; cannot be traced back
+- **No PII stored** — raw IPs are never saved, only the truncated hash
+- **Minimal payload** — the `/api/track` beacon is ~100 bytes, returns `204 No Content`
+- **Non-blocking** — the client beacon is fire-and-forget (`catch(() => {})`)
+- **Rate-limited** — 60 req/min per IP on the track endpoint to prevent abuse
+- **Auto-cleanup** — raw `PageView` rows purged after 90 days; `DailyStats` kept permanently
+- **Admin-only access** — all analytics read endpoints require JWT auth
+
+### 18.13 Dependencies to Add
+
+| Package | Where | Purpose |
+|---------|-------|---------|
+| `express-rate-limit` | server | Rate-limit the `/api/track` endpoint |
+| `node-cron` | server | Schedule daily stats aggregation at midnight |
+| `recharts` | client | Charts on the admin analytics page (optional — can use CSS bars instead) |
+
+### 18.14 Site Architecture Update
+
+Add to the site architecture (Section 3):
+
+```
+/admin/analytics           → Website Traffic Analytics (visitor stats, page views, referrers, device breakdown)
+```
+
+### 18.15 Files to Create / Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `server/prisma/schema.prisma` | Modify | Add `PageView` and `DailyStats` models |
+| `server/src/middleware/analytics.js` | Create | Visitor hashing, device/browser parsing |
+| `server/src/routes/track.js` | Create | `POST /api/track` beacon endpoint |
+| `server/src/routes/admin.js` | Modify | Add `/analytics/summary`, `/analytics/daily`, `/analytics/pages`, `/analytics/referrers` |
+| `server/src/jobs/aggregateStats.js` | Create | Daily stats rollup + old PageView cleanup |
+| `server/src/index.js` | Modify | Mount `/api/track` route, register cron job, set `trust proxy` |
+| `client/src/hooks/usePageTracking.js` | Create | React hook to beacon page views on route change |
+| `client/src/App.jsx` | Modify | Add `usePageTracking()` hook call |
+| `client/src/pages/admin/Analytics.jsx` | Create | Admin analytics dashboard page |
+| `client/src/pages/admin/Dashboard.jsx` | Modify | Add "Visitors Today" stat card |
+| `client/nginx.conf` | Modify | Add `X-Forwarded-For` header |
+
+### 18.16 Implementation Order
+
+1. Add Prisma models (`PageView`, `DailyStats`) and run migration
+2. Create analytics middleware (visitor hashing, device parsing)
+3. Create `POST /api/track` route with rate limiting
+4. Update `server/src/index.js` (mount route, trust proxy, cron job)
+5. Create daily stats aggregation job
+6. Add admin analytics API endpoints
+7. Create client-side `usePageTracking` hook and wire into `App.jsx`
+8. Build admin analytics page with charts
+9. Add "Visitors Today" stat card to Dashboard
+10. Update nginx config with `X-Forwarded-For`
+11. Deploy (schema change → full pipeline: Steps 1–7 from deployment SKILL)
+
+---
+
+## 19. Guest Appointment Booking (Quick Book Without Enrollment)
+
+### 19.1 Problem Statement
+
+The current booking flow (`/book`) requires patients to be enrolled before they can book an appointment. The enrollment form (`/enroll`) is a 4-step process collecting extensive medical history, insurance, fitness goals, and contact details. This creates a significant barrier:
+
+- **Drop-off friction:** Users arriving from Google, social media, or word-of-mouth want to book quickly. Being forced to complete a lengthy intake form first causes abandonment.
+- **Hidden requirement:** The `/book` page gives no upfront indication that enrollment is required. Users only discover this after entering a mobile number and hitting "Patient not found."
+- **Redirect breaks momentum:** Being sent away from `/book` to `/enroll` (a separate multi-step form) disrupts intent. Many users won't return.
+- **Analytics evidence:** Website analytics may show users landing on `/book` and leaving without completing any action — a clear sign of booking funnel abandonment.
+
+### 19.2 Current Flow (Problematic)
+
+```
+User visits /book
+  → Enter mobile/Patient ID
+  → "Patient not found" error
+  → Link to /enroll (4-step form: Personal → Contact → Program → Goals)
+  → Complete enrollment → Get Patient ID
+  → Return to /book → Search again → Select service → Pick slot → Confirm
+```
+
+**Total steps before first appointment: 8+**
+
+### 19.3 Proposed Solution — Inline Quick Registration on `/book`
+
+Allow new visitors to book an appointment with **minimal information**, collecting only what's needed for the appointment. Full enrollment details can be completed later (at the clinic or via follow-up).
+
+**New Flow:**
+```
+User visits /book
+  → Sees "Find Your Record" search + always-visible "New patient? Register here to book instantly" link
+  → PATH A (returning patient): Enter Patient ID or mobile → found → continue to service selection
+  → PATH B (new patient, direct): Click "Register here" link → inline Quick Register form appears immediately
+      → Collect: Full Name, Mobile, Gender, Age (4 fields only)
+      → Auto-create patient record with status "quick-registered"
+      → Continue to service selection → Pick slot → Confirm
+  → PATH C (new patient, searched first): Enter mobile → not found (404) → Quick Register form auto-appears
+      → Mobile pre-filled from search → fill remaining 3 fields → same flow as PATH B
+```
+
+**Total steps before first appointment: 4–5**
+
+**UX Note:** The "New patient?" link is always visible below the search field — a first-time visitor never needs to perform a failed search to discover registration. The search-triggered flow (PATH C) is a fallback for users who try their number first.
+
+### 19.4 Data Model Changes
+
+Add a `registrationStatus` field to the `Patient` model to distinguish quick-registered patients from fully enrolled ones:
+
+```prisma
+model Patient {
+  // ... existing fields ...
+  registrationStatus String @default("full")  // "full" | "quick"
+  // ...
+}
+```
+
+- `"full"` — completed the full `/enroll` form (existing patients, default)
+- `"quick"` — registered inline during booking with minimal info
+
+**No schema-breaking changes.** Existing patients are unaffected (default is `"full"`). Quick-registered patients have nullable fields for medical history, insurance, etc. — which the schema already supports (most fields are optional).
+
+### 19.5 API Changes
+
+**New endpoint: `POST /api/appointments/quick-register`** (public, rate-limited)
+
+```
+Request:  { fullName, mobile, gender, age }
+Response: { id: "RF-0123", fullName, mobile, registrationStatus: "quick" }
+```
+
+- Validates: name (required, 2+ chars), mobile (required, 10 digits, unique), gender (required), age (required, 1–120)
+- If mobile already exists → returns existing patient (idempotent — handles accidental re-registration)
+- Creates patient with `registrationStatus: "quick"`, empty arrays for `program`, `preferredDays`, etc.
+- Rate limited: 5 req/min/IP to prevent abuse
+
+**Modify: `POST /api/appointments/lookup`**
+- No changes needed — lookup by mobile already works. Quick-registered patients will be found normally.
+
+### 19.6 Client-Side Changes (`/book` Page)
+
+**Step 0 — Patient Identification (updated):**
+
+Current behavior when patient not found:
+```
+❌ "Patient not found. Not enrolled yet? Register here →" (link to /enroll)
+```
+
+New behavior — two entry points to Quick Registration:
+
+**1. Always-visible link (primary path for new patients):**
+```
+┌─────────────────────────────────────────────┐
+│  Find Your Record                           │
+│  Enter your Patient ID or registered mobile │
+│                                             │
+│  [__________________________]  [Search]     │
+│                                             │
+│  New patient? Register here to book instantly│  ← always visible
+└─────────────────────────────────────────────┘
+```
+Clicking the link opens the Quick Registration form immediately — no search required.
+
+**2. Search-triggered fallback (for users who try their number first):**
+When a lookup returns 404, the Quick Registration form auto-appears with mobile pre-filled.
+
+**Quick Registration form (same for both paths):**
+```
+┌─────────────────────────────────────────────┐
+│  Quick Registration                         │
+│  No record found. Fill in the basics to     │
+│  register and book instantly.               │
+│                                             │
+│  Full Name:  [___________________________]  │
+│  Mobile:     [__________]  Age: [____]      │
+│  Gender:     (●) Male  (○) Female  (○) Other│
+│                                             │
+│  [Register & Continue →]   Cancel           │
+│                                             │
+│  Need the complete form? Full enrollment →  │
+└─────────────────────────────────────────────┘
+```
+
+- Mobile field is pre-filled from the search input when triggered by 404
+- On submit → `POST /api/appointments/quick-register`
+- On success → auto-set patient data and proceed to Step 1 (Service selection)
+- Seamless — user stays on the same page, no redirect
+- "Cancel" dismisses the form; "Full enrollment form" links to `/enroll` for users who prefer the complete intake
+
+### 19.7 Admin-Side Visibility
+
+**Dashboard & Patients list:**
+- Quick-registered patients show a badge: `Quick` (amber) vs regular patients (no badge)
+- Admin can filter patients by registration status
+- A banner or counter on the dashboard: "X patients need full enrollment" linking to a filtered patients view
+
+**Patient detail/edit page:**
+- If `registrationStatus === "quick"`, show a notice: "This patient was quick-registered during booking. Medical history and program details are incomplete."
+- Staff can complete the remaining fields during the first visit and update status to `"full"`
+
+### 19.8 Business Rules
+
+- **Quick-registered patients can book appointments** — same rules as fully enrolled patients (slot capacity, cancellation policy, etc.)
+- **No duplicate mobiles** — if a user tries to quick-register with a mobile that already exists, return the existing patient record instead of erroring
+- **Program defaults** — quick-registered patients get empty `program[]` and `sessionType: "In-Person"` as defaults. The service they select during booking serves as their initial program indication.
+- **Follow-up nudge** — when a quick-registered patient arrives for their appointment, staff should complete the full intake. The admin UI should surface this clearly.
+- **Full enrollment still available** — the `/enroll` page remains unchanged for users who prefer to complete everything upfront. The "Book Your First Appointment" CTA on enrollment success still works.
+
+### 19.9 Site Architecture Update
+
+No new routes. The `/book` page gains an inline registration capability. The existing `/enroll` page remains for full registration.
+
+```
+/book    → Appointment Booking (now supports inline quick-registration for new patients)
+/enroll  → Full Patient Enrollment (unchanged, for detailed intake)
+```
+
+### 19.10 Implementation Order
+
+1. Add `registrationStatus` field to Patient model in Prisma schema, run migration
+2. Create `POST /api/appointments/quick-register` endpoint with validation and rate limiting
+3. Update `/book` page Step 0: replace "not found" error with inline quick-register form
+4. Add `registrationStatus` badge to admin Patients list and patient detail page
+5. Add "incomplete registrations" counter to admin Dashboard
+6. Test: new user can go from `/book` → quick-register → select service → pick slot → confirm in one seamless flow
+7. Deploy
+

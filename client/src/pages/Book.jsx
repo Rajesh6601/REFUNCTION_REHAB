@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Search, Stethoscope, CalendarDays, CheckCircle, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
+import { Search, Stethoscope, CalendarDays, CheckCircle, ChevronLeft, ChevronRight, AlertCircle, UserPlus } from 'lucide-react'
 import PageWrapper from '../components/ui/PageWrapper'
-import { lookupPatient, getAvailableSlots, createAppointment } from '../lib/api'
+import { lookupPatient, quickRegister, getAvailableSlots, createAppointment } from '../lib/api'
 
 const STEPS = [
   { label: 'Find Record', icon: Search },
@@ -39,6 +39,10 @@ export default function Book() {
   const [patient, setPatient]       = useState(null)
   const [lookupError, setLookupError] = useState('')
   const [lookupLoading, setLookupLoading] = useState(false)
+  const [showQuickReg, setShowQuickReg] = useState(false)
+  const [quickForm, setQuickForm] = useState({ fullName: '', mobile: '', gender: '', age: '' })
+  const [quickError, setQuickError] = useState('')
+  const [quickLoading, setQuickLoading] = useState(false)
 
   const [serviceType, setServiceType]   = useState('')
   const [sessionType, setSessionType]   = useState('')
@@ -88,9 +92,39 @@ export default function Book() {
       setSessionType(res.data.sessionType || 'In-Person')
       setStep(1)
     } catch (err) {
-      setLookupError(err.response?.data?.error || 'Patient not found')
+      if (err.response?.status === 404) {
+        setShowQuickReg(true)
+        setQuickForm(f => ({ ...f, mobile: /^\d{10}$/.test(query.trim()) ? query.trim() : '' }))
+        setLookupError('')
+      } else {
+        setLookupError(err.response?.data?.error || 'Something went wrong. Please try again.')
+      }
     } finally {
       setLookupLoading(false)
+    }
+  }
+
+  // Quick Registration
+  const handleQuickRegister = async () => {
+    setQuickError('')
+    const { fullName, mobile, gender, age } = quickForm
+    if (!fullName || fullName.trim().length < 2) { setQuickError('Name must be at least 2 characters'); return }
+    if (!/^\d{10}$/.test(mobile)) { setQuickError('Mobile must be exactly 10 digits'); return }
+    if (!gender) { setQuickError('Please select a gender'); return }
+    if (!age || parseInt(age) < 1 || parseInt(age) > 120) { setQuickError('Age must be between 1 and 120'); return }
+
+    setQuickLoading(true)
+    try {
+      const res = await quickRegister({ fullName: fullName.trim(), mobile, gender, age: parseInt(age) })
+      setPatient(res.data)
+      setServiceType(res.data.program?.[0] || '')
+      setSessionType(res.data.sessionType || 'In-Person')
+      setShowQuickReg(false)
+      setStep(1)
+    } catch (err) {
+      setQuickError(err.response?.data?.error || 'Registration failed. Please try again.')
+    } finally {
+      setQuickLoading(false)
     }
   }
 
@@ -254,15 +288,115 @@ export default function Book() {
                       {lookupLoading ? 'Searching...' : <><Search size={16} /> Search</>}
                     </button>
                   </div>
+                  {!showQuickReg && (
+                    <div className="mt-5 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-gray-200" />
+                      <span className="text-xs text-muted uppercase tracking-wide">or</span>
+                      <div className="h-px flex-1 bg-gray-200" />
+                    </div>
+                  )}
+                  {!showQuickReg && (
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickReg(true)}
+                      className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-teal/30 bg-teal/5 text-teal font-semibold text-sm hover:bg-teal/10 hover:border-teal/50 transition-colors"
+                    >
+                      <UserPlus size={18} />
+                      New Patient? Register & Book Instantly
+                    </button>
+                  )}
                   {lookupError && (
                     <div className="mt-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
                       <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                      <div>
-                        {lookupError}
-                        <div className="mt-2">
-                          <Link to="/enroll" className="text-teal font-medium hover:underline">Not enrolled yet? Register here</Link>
+                      <div>{lookupError}</div>
+                    </div>
+                  )}
+                  {showQuickReg && (
+                    <div className="mt-5 bg-teal/5 border-2 border-teal/30 rounded-xl p-5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <UserPlus size={18} className="text-teal" />
+                        <h3 className="font-display font-bold text-navy text-lg">Quick Registration</h3>
+                      </div>
+                      <p className="text-muted text-sm mb-4">No record found. Fill in the basics to register and book instantly.</p>
+
+                      {quickError && (
+                        <div className="mb-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-3 py-2">
+                          {quickError}
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="form-label text-xs">Full Name <span className="text-red-400">*</span></label>
+                          <input
+                            className="input-field"
+                            placeholder="Patient's full name"
+                            value={quickForm.fullName}
+                            onChange={(e) => setQuickForm(f => ({ ...f, fullName: e.target.value }))}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="form-label text-xs">Mobile <span className="text-red-400">*</span></label>
+                            <input
+                              className="input-field"
+                              placeholder="10-digit number"
+                              maxLength={10}
+                              value={quickForm.mobile}
+                              onChange={(e) => setQuickForm(f => ({ ...f, mobile: e.target.value.replace(/\D/g, '') }))}
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label text-xs">Age <span className="text-red-400">*</span></label>
+                            <input
+                              type="number"
+                              className="input-field"
+                              placeholder="Age"
+                              min="1"
+                              max="120"
+                              value={quickForm.age}
+                              onChange={(e) => setQuickForm(f => ({ ...f, age: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="form-label text-xs">Gender <span className="text-red-400">*</span></label>
+                          <div className="flex gap-2 mt-1">
+                            {['Male', 'Female', 'Other'].map(g => (
+                              <button
+                                key={g}
+                                type="button"
+                                onClick={() => setQuickForm(f => ({ ...f, gender: g }))}
+                                className={`flex-1 px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition-colors ${
+                                  quickForm.gender === g ? 'bg-teal/10 border-teal text-teal' : 'bg-white border-gray-200 text-text hover:border-teal'
+                                }`}
+                              >
+                                {g}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
+
+                      <div className="flex items-center gap-3 mt-4">
+                        <button
+                          onClick={handleQuickRegister}
+                          disabled={quickLoading}
+                          className="btn-primary text-sm py-2.5 px-5 disabled:opacity-60"
+                        >
+                          {quickLoading ? 'Registering...' : <><UserPlus size={16} /> Register & Continue</>}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowQuickReg(false); setQuickError('') }}
+                          className="text-sm text-muted hover:text-navy transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted mt-3">
+                        Need to fill the complete form? <Link to="/enroll" className="text-teal font-medium hover:underline">Full enrollment form</Link>
+                      </p>
                     </div>
                   )}
                 </div>
