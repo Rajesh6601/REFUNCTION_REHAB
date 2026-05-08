@@ -2105,3 +2105,109 @@ To switch from 60-minute to 45-minute slots:
 4. Save — new slots are generated immediately for future bookings
 5. Existing appointments are unaffected (they store absolute start/end times)
 
+## 21. Admin-Side Appointment Booking (Book on Behalf of Patient)
+
+### 21.1 Problem Statement
+
+Currently, appointments can only be booked via the public `/book` page. There is no way for staff or doctors to book an appointment for a patient from the admin panel. This creates friction in several common clinic scenarios:
+
+- **Phone bookings**: Patient calls the clinic to schedule — staff must use the patient-facing `/book` page, which is awkward and slow
+- **Follow-up scheduling**: After a session, the doctor wants to book the patient's next visit immediately while discussing the treatment plan
+- **Elderly/non-tech patients**: Many rehab patients (post-surgery, elderly) can't navigate the online booking system themselves
+- **Walk-in scheduling**: Staff books the next appointment before the patient leaves the clinic
+- **Clinical decisions**: Doctor reviews records and decides the patient needs to come in — wants to book right from the patient's admin page
+
+### 21.2 Solution
+
+Add a **"Book" action button** to the admin Patients table (alongside existing Edit, Visits, Payment actions) that opens an inline booking modal. The patient is already identified, so the flow skips the lookup step and goes straight to slot selection.
+
+### 21.3 User Flow
+
+```
+Admin > Patients > Click "Book" on a patient row
+  → Modal opens with patient name pre-filled (read-only)
+  → Select service type (dropdown: Physiotherapy, Consultation, etc.)
+  → Select session type (In-Person / Online / Home Visit — defaults to patient's preference)
+  → Pick a date (calendar, same as public /book page)
+  → Pick an available time slot (fetched from /api/appointments/slots)
+  → Optional: Add notes
+  → Click "Book Appointment"
+  → Success → toast/confirmation → modal closes
+```
+
+### 21.4 Architecture — No New API Endpoints
+
+The existing public `POST /api/appointments` endpoint accepts `{ patientId, appointmentDate, startTime, endTime, serviceType, sessionType, notes }` — all the fields the admin modal will provide. The slot availability check (`GET /api/appointments/slots?date=`) is also public. **No new server routes are needed.**
+
+The only change is client-side: adding the "Book" button and a booking modal to the admin Patients page.
+
+### 21.5 UI Design
+
+**Patients table — Actions column (line 324–344 of Patients.jsx):**
+Add a "Book" link after the existing "Payment" link:
+```jsx
+<Link to={`/book?patientId=${p.id}&admin=1`}
+  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium whitespace-nowrap">
+  <CalendarPlus size={13} /> Book
+</Link>
+```
+
+**Two approaches (choose one):**
+
+**Option A — Link to `/book` with pre-filled patient (simpler):**
+- Add `patientId` query param support to the existing `/book` page
+- When `patientId` is present, auto-lookup the patient and skip to Step 1 (service selection)
+- Add an `admin=1` param to show a "Back to Patients" link instead of the public nav
+- Reuses 100% of existing booking UI — no code duplication
+
+**Option B — Inline modal on Patients page (richer UX):**
+- A modal/drawer that embeds a compact booking form directly in the admin patients view
+- Staff never leaves the patients page
+- More code to write, but better workflow for rapid sequential bookings
+
+**Recommended: Option A** — it reuses the battle-tested `/book` page flow with minimal changes. The admin just gets a direct shortcut that skips the patient lookup step.
+
+### 21.6 `/book` Page Changes for Admin Pre-Fill
+
+When the URL contains `?patientId=RF-XXXX`:
+1. On mount, auto-call `getPatient(patientId)` or `lookupPatient(patientId)`
+2. If found, set patient data and advance directly to Step 1 (service selection)
+3. If `admin=1` is in the URL, show a "← Back to Patients" link at the top instead of the regular patient search header
+4. The rest of the booking flow (service → date → slot → confirm) works identically
+
+### 21.7 Files to Modify
+
+| # | File | Change |
+|---|------|--------|
+| 1 | `client/src/pages/admin/Patients.jsx` | Add "Book" action link with `CalendarPlus` icon |
+| 2 | `client/src/pages/Book.jsx` | Accept `patientId` and `admin` query params, auto-lookup and skip Step 0 |
+
+**No server changes required.** Existing endpoints handle everything.
+
+### 21.8 Implementation Details
+
+**`client/src/pages/admin/Patients.jsx`:**
+- Add `CalendarPlus` to lucide imports
+- Add a "Book" link in the actions column (after Payment): `<Link to={/book?patientId=${p.id}&admin=1}>`
+
+**`client/src/pages/Book.jsx`:**
+- Read `patientId` and `admin` from `useSearchParams()`
+- In `useEffect`, if `patientId` is present, call `lookupPatient(patientId)` and on success set patient + advance to Step 1
+- If `admin=1`, render a "← Back to Patients" link at the top of the card
+- The public flow (manual search / quick-register) remains unchanged when no params are present
+
+### 21.9 Business Rules
+
+- **Same slot validation**: Admin bookings go through the same availability and capacity checks as patient bookings — no overbooking
+- **Same API endpoint**: `POST /api/appointments` — no special admin booking route needed
+- **Audit trail**: The appointment record is identical regardless of who booked it (patient or admin)
+- **Quick-reg patients**: Staff can book for quick-registered patients too — the "Book" button appears for all patients regardless of `registrationStatus`
+
+### 21.10 Implementation Order
+
+1. Add "Book" action link to admin Patients table (Patients.jsx)
+2. Update `/book` page to accept `patientId` query param and auto-skip Step 0
+3. Add `admin=1` param handling for "Back to Patients" navigation
+4. Test: Admin clicks "Book" on a patient → lands on `/book` with patient pre-filled → selects service → picks slot → confirms
+5. Deploy
+

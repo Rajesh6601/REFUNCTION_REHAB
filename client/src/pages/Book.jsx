@@ -34,6 +34,7 @@ function formatDate(y, m, d) {
 
 export default function Book() {
   const [searchParams] = useSearchParams()
+  const isAdmin = searchParams.get('admin') === '1'
   const [step, setStep]             = useState(0)
   const [query, setQuery]           = useState('')
   const [patient, setPatient]       = useState(null)
@@ -234,6 +235,11 @@ export default function Book() {
     <PageWrapper>
       <section className="py-12 bg-light min-h-screen">
         <div className="max-w-2xl mx-auto px-4">
+          {isAdmin && (
+            <Link to="/admin/patients" className="inline-flex items-center gap-1.5 text-sm text-navy hover:text-teal mb-4">
+              <ChevronLeft size={16} /> Back to Patients
+            </Link>
+          )}
           {/* Step Indicators */}
           <div className="flex items-center justify-between mb-8">
             {STEPS.map((s, i) => {

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Download, ChevronLeft, ChevronRight, CreditCard, Pencil, X, Package, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
+import { Search, Download, ChevronLeft, ChevronRight, CreditCard, Pencil, X, Package, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, CalendarPlus } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getAdminPatients, exportPatients, getPatientPackages, recordVisit, deleteVisit, recordPayment } from '../../lib/api'
 
@@ -340,6 +340,12 @@ export default function AdminPatients() {
                         className="inline-flex items-center gap-1 text-xs text-teal hover:underline font-medium whitespace-nowrap"
                       >
                         <CreditCard size={13} /> Payment
+                      </Link>
+                      <Link
+                        to={`/book?patientId=${p.id}&admin=1`}
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium whitespace-nowrap"
+                      >
+                        <CalendarPlus size={13} /> Book
                       </Link>
                     </div>
                   </td>
