@@ -1317,7 +1317,7 @@ model DoctorAvailability {
   dayOfWeek     Int                // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   startTime     String             // "09:00" (24-hour format)
   endTime       String             // "18:00"
-  slotDuration  Int      @default(60)  // minutes per slot (e.g., 30, 45, 60)
+  slotDuration  Int      @default(30)  // minutes per slot (recommended: 45 for rehab sessions)
   maxPatients   Int      @default(1)   // max concurrent patients per slot (1 = single, >1 = group/batch)
   sessionType   String   @default("In-Person")  // In-Person / Online / Home Visit
   label         String?            // optional label, e.g., "Women's Health Batch", "General OPD"
@@ -2053,4 +2053,55 @@ No new routes. The `/book` page gains an inline registration capability. The exi
 5. Add "incomplete registrations" counter to admin Dashboard
 6. Test: new user can go from `/book` → quick-register → select service → pick slot → confirm in one seamless flow
 7. Deploy
+
+## 20. Appointment Slot Duration — 45-Minute Recommended Configuration
+
+### 20.1 Rationale
+
+The default slot duration should be **45 minutes** for physiotherapy and rehab sessions. This is the industry-standard sweet spot:
+
+- **Adequate treatment time**: 45 minutes covers initial assessment, hands-on treatment, exercise guidance, and patient education without rushing
+- **Increased daily capacity**: 33% more patients compared to 60-minute slots
+- **Natural transition buffer**: When scheduled on the hour, a 45-minute slot leaves a 15-minute gap for clinical notes, sanitization, and preparation for the next patient
+- **Common in physiotherapy**: Most physio clinics globally operate on 30–45 minute sessions; 60 minutes is typically reserved for initial evaluations or complex cases
+
+### 20.2 Capacity Comparison
+
+| Working Hours | 60-min slots | 45-min slots | 30-min slots |
+|---|---|---|---|
+| 9 AM – 1 PM (4 hrs) | 4 patients | 5 patients | 8 patients |
+| 2 PM – 6 PM (4 hrs) | 4 patients | 5 patients | 8 patients |
+| 9 AM – 6 PM (9 hrs) | 9 patients | 12 patients | 18 patients |
+
+**Recommended**: 45-minute slots for standard sessions, 30-minute slots for follow-ups or quick reviews.
+
+### 20.3 How It Works (No Code Changes Required)
+
+Slot duration is **fully configurable per availability block** via the admin panel. The system already supports any duration from 10 to 120 minutes.
+
+**Configuration path**: Admin Dashboard → Availability → Edit/Create block → "Slot Duration (min)" field
+
+**Architecture**:
+- `DoctorAvailability.slotDuration` stores the duration in minutes (schema default: `30`)
+- The `generateSlots()` function in `appointments.js` reads this value dynamically per availability block and generates slots accordingly
+- Different blocks can have different durations (e.g., 45-min for therapy, 30-min for follow-ups)
+- The `/book` page automatically reflects the correct slot times — no frontend changes needed
+
+### 20.4 Recommended Setup
+
+| Block | Days | Hours | Slot Duration | Session Type | Label |
+|---|---|---|---|---|---|
+| Morning OPD | Mon–Sat | 09:00–13:00 | 45 min | In-Person | Morning Session |
+| Afternoon OPD | Mon–Sat | 14:00–18:00 | 45 min | In-Person | Afternoon Session |
+| Follow-up slots | Mon, Wed, Fri | 18:00–19:00 | 30 min | In-Person | Quick Follow-up |
+| Online consult | Tue, Thu | 18:00–19:30 | 30 min | Online | Online Consultation |
+
+### 20.5 Admin Action
+
+To switch from 60-minute to 45-minute slots:
+1. Go to **Admin > Availability**
+2. Edit each availability block
+3. Change "Slot Duration" from `60` to `45`
+4. Save — new slots are generated immediately for future bookings
+5. Existing appointments are unaffected (they store absolute start/end times)
 

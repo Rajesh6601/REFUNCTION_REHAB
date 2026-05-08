@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
         dayOfWeek: parseInt(dayOfWeek),
         startTime,
         endTime,
-        slotDuration:  slotDuration  ? parseInt(slotDuration)  : 30,
+        slotDuration:  slotDuration  ? parseInt(slotDuration)  : 45,
         maxPatients:   maxPatients   ? parseInt(maxPatients)   : 1,
         sessionType:   sessionType   || 'In-Person',
         label:         label         || null,

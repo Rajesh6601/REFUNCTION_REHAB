@@ -9,7 +9,7 @@ import {
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const SESSION_TYPES = ['In-Person', 'Online', 'Home Visit']
 
-const emptyBlock = { dayOfWeek: 1, startTime: '09:00', endTime: '10:00', slotDuration: 30, maxPatients: 1, sessionType: 'In-Person', label: '' }
+const emptyBlock = { dayOfWeek: 1, startTime: '09:00', endTime: '10:00', slotDuration: 45, maxPatients: 1, sessionType: 'In-Person', label: '' }
 const emptyOverride = { date: '', startTime: '', endTime: '', isBlocked: true, reason: '' }
 
 export default function AdminAvailability() {
@@ -159,7 +159,7 @@ export default function AdminAvailability() {
               <div>
                 <label className="text-xs font-medium text-muted">Slot Duration (min)</label>
                 <input type="number" className="input-field text-sm py-2 mt-1" value={form.slotDuration}
-                  onChange={(e) => setForm({ ...form, slotDuration: parseInt(e.target.value) || 30 })} min={10} max={120} />
+                  onChange={(e) => setForm({ ...form, slotDuration: parseInt(e.target.value) || 45 })} min={10} max={120} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted">Max Patients/Slot</label>

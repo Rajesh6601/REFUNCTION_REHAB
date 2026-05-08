@@ -167,7 +167,7 @@ model DoctorAvailability {
   dayOfWeek    Int     // 0=Sunday ... 6=Saturday
   startTime    String  // "HH:mm"
   endTime      String  // "HH:mm"
-  slotDuration Int     @default(30) // minutes
+  slotDuration Int     @default(45) // minutes
   maxPatients  Int     @default(1)
   sessionType  String  @default("In-Person")
   label        String? // e.g. "Morning Batch"
