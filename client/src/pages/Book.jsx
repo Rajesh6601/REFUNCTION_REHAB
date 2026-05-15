@@ -13,7 +13,7 @@ const STEPS = [
 ]
 
 const SERVICES = ['Physiotherapy', 'General Health & Fitness', 'Kids Exercise', 'Post-Surgery Rehab', 'Sports Injury', 'Elderly Care']
-const SESSION_TYPES = ['In-Person', 'Online', 'Home Visit']
+const SESSION_TYPES = ['In-Person', 'Online']
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',

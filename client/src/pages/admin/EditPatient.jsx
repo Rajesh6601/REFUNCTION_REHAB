@@ -253,7 +253,7 @@ export default function EditPatient() {
               <Field label="Session Type">
                 <Select value={form.sessionType} onChange={set('sessionType')}>
                   <option value="">Select</option>
-                  <option>In-Person</option><option>Online</option><option>Home Visit</option>
+                  <option>In-Person</option><option>Online</option>
                 </Select>
               </Field>
               <Field label="Preferred Time">

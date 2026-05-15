@@ -7,7 +7,7 @@ import {
 } from '../../lib/api'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-const SESSION_TYPES = ['In-Person', 'Online', 'Home Visit']
+const SESSION_TYPES = ['In-Person', 'Online']
 
 const emptyBlock = { dayOfWeek: 1, startTime: '09:00', endTime: '10:00', slotDuration: 45, maxPatients: 1, sessionType: 'In-Person', label: '' }
 const emptyOverride = { date: '', startTime: '', endTime: '', isBlocked: true, reason: '' }

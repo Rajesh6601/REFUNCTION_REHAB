@@ -8,7 +8,7 @@ import { searchPatients, recordPayment } from '../lib/api'
 const SERVICES_LIST = [
   'Initial Consultation', 'Follow-up Session', 'Physiotherapy Session',
   'Exercise Training', 'Kids Exercise', 'Post-Surgery Rehab',
-  'Sports Injury Session', 'Elderly Care Session', 'Home Visit',
+  'Sports Injury Session', 'Elderly Care Session',
   'Group Session', 'Online Session', 'Other',
 ]
 

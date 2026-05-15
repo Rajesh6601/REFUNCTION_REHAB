@@ -18,7 +18,7 @@ const PACKAGE_PRESETS = [
 const SERVICES_LIST = [
   'Physiotherapy Session', 'Initial Consultation', 'Follow-up Session',
   'Exercise Training', 'Kids Exercise', 'Post-Surgery Rehab',
-  'Sports Injury Session', 'Elderly Care Session', 'Home Visit',
+  'Sports Injury Session', 'Elderly Care Session',
   'Group Session', 'Online Session', 'Other',
 ]
 

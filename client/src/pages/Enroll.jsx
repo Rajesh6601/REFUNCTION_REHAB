@@ -31,7 +31,7 @@ const step2Schema = z.object({
   emergencyRelation: z.string().optional(),
 })
 const step3Schema = z.object({
-  sessionType:   z.enum(['In-Person', 'Online', 'Home Visit'], { required_error: 'Please select session type' }),
+  sessionType:   z.enum(['In-Person', 'Online'], { required_error: 'Please select session type' }),
   preferredTime: z.string().min(1, 'Select a preferred time'),
 })
 const step4Schema = z.object({
@@ -303,7 +303,7 @@ export default function Enroll() {
                       <Field label="Session Type" error={errors.sessionType?.message} required>
                         <Select {...register('sessionType')} className={errors.sessionType ? 'input-error' : ''}>
                           <option value="">Select</option>
-                          <option>In-Person</option><option>Online</option><option>Home Visit</option>
+                          <option>In-Person</option><option>Online</option>
                         </Select>
                       </Field>
                       <Field label="Preferred Time" error={errors.preferredTime?.message} required>
