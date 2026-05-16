@@ -1,5 +1,6 @@
 const router      = require('express').Router()
 const prisma      = require('../lib/prisma')
+const eventBus    = require('../lib/events')
 const { requireAuth } = require('../middleware/auth')
 
 router.use(requireAuth)
@@ -114,11 +115,24 @@ router.post('/:id/visits', async (req, res) => {
       },
     })
 
+    // Emit visit:recorded event (package visits only)
+    eventBus.safeEmit('visit:recorded', {
+      packageId: pkg.id,
+      patientId: pkg.patientId,
+      visitNumber,
+      totalSessions: pkg.totalSessions,
+    })
+
     // Auto-complete if this was the last session
     if (visitNumber >= pkg.totalSessions) {
       await prisma.treatmentPackage.update({
         where: { id: pkg.id },
         data:  { status: 'completed' },
+      })
+
+      eventBus.safeEmit('package:completed', {
+        packageId: pkg.id,
+        patientId: pkg.patientId,
       })
     }
 

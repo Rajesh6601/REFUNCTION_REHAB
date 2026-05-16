@@ -1,5 +1,6 @@
 const router      = require('express').Router()
 const prisma      = require('../lib/prisma')
+const eventBus    = require('../lib/events')
 const { requireAuth } = require('../middleware/auth')
 
 // POST /api/patients/enroll
@@ -54,6 +55,8 @@ router.post('/enroll', async (req, res) => {
         enrolledAt:       enrolledAt ? new Date(enrolledAt) : new Date(),
       },
     })
+
+    eventBus.safeEmit('patient:enrolled', { patientId: patient.id })
 
     res.status(201).json({
       message: 'Enrollment successful',

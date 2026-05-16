@@ -1,5 +1,6 @@
 const router      = require('express').Router()
 const prisma      = require('../lib/prisma')
+const eventBus    = require('../lib/events')
 const rateLimit   = require('express-rate-limit')
 const { requireAuth } = require('../middleware/auth')
 
@@ -197,6 +198,8 @@ router.post('/quick-register', quickRegLimiter, async (req, res) => {
         registrationStatus: 'quick',
       },
     })
+
+    eventBus.safeEmit('patient:enrolled', { patientId: patient.id })
 
     res.status(201).json({
       id:            patient.id,
@@ -422,6 +425,14 @@ router.patch('/:id', async (req, res) => {
         patient: { select: { fullName: true, mobile: true } },
       },
     })
+
+    if (status === 'no-show') {
+      eventBus.safeEmit('appointment:no-show', {
+        appointmentId: appt.id,
+        patientId: appt.patientId,
+      })
+    }
+
     res.json(appt)
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Appointment not found' })

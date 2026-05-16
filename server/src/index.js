@@ -10,8 +10,10 @@ const testimonialRoutes  = require('./routes/testimonials')
 const packageRoutes      = require('./routes/packages')
 const appointmentRoutes  = require('./routes/appointments')
 const availabilityRoutes = require('./routes/availability')
-const trackRoutes        = require('./routes/track')
+const trackRoutes           = require('./routes/track')
+const notificationRoutes    = require('./routes/notifications')
 const { startAnalyticsJobs } = require('./lib/analyticsAggregator')
+const { startWorkflowEngine } = require('./services/workflows/engine')
 
 const app  = express()
 const PORT = process.env.PORT || 4000
@@ -43,6 +45,7 @@ app.use('/api/testimonials',  testimonialRoutes)
 app.use('/api/admin/packages', packageRoutes)
 app.use('/api/appointments',        appointmentRoutes)
 app.use('/api/admin/availability',  availabilityRoutes)
+app.use('/api/admin/notifications', notificationRoutes)
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -60,4 +63,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ ReFunction Rehab API running on port ${PORT}`)
   startAnalyticsJobs()
+  startWorkflowEngine()
 })

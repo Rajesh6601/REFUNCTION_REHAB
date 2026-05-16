@@ -27,6 +27,7 @@ import AdminTestimonials   from './pages/admin/Testimonials'
 import AdminAvailability   from './pages/admin/Availability'
 import AdminAppointments   from './pages/admin/Appointments'
 import AdminAnalytics      from './pages/admin/Analytics'
+import AdminNotifications  from './pages/admin/Notifications'
 import Book                from './pages/Book'
 import usePageTracking     from './hooks/usePageTracking'
 
@@ -73,7 +74,8 @@ export default function App() {
         <Route path="/admin/testimonials"  element={<ProtectedRoute><AdminTestimonials /></ProtectedRoute>} />
         <Route path="/admin/availability"  element={<ProtectedRoute><AdminAvailability /></ProtectedRoute>} />
         <Route path="/admin/appointments"  element={<ProtectedRoute><AdminAppointments /></ProtectedRoute>} />
-        <Route path="/admin/analytics"    element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
+        <Route path="/admin/analytics"      element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
+        <Route path="/admin/notifications"  element={<ProtectedRoute><AdminNotifications /></ProtectedRoute>} />
         <Route path="/admin/payment"       element={<ProtectedRoute><Payment /></ProtectedRoute>} />
         <Route path="/admin"           element={<Navigate to="/admin/dashboard" replace />} />
 

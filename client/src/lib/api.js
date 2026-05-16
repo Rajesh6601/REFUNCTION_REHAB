@@ -95,6 +95,10 @@ export const getSlotOverrides   = (params)   => api.get('/admin/availability/ove
 export const createSlotOverride = (data)     => api.post('/admin/availability/overrides', data)
 export const deleteSlotOverride = (id)       => api.delete(`/admin/availability/overrides/${id}`)
 
+// ─── Notifications (Admin) ──────────────────────────────────────────────────
+export const getNotifications  = (params) => api.get('/admin/notifications', { params })
+export const retryNotification = (id)     => api.post(`/admin/notifications/${id}/retry`)
+
 // ─── Analytics (Public beacon) ───────────────────────────────────────────────
 export const trackPageView = (data) =>
   api.post('/track', data).catch(() => {}) // fire-and-forget

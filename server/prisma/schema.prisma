@@ -46,9 +46,11 @@ model Patient {
   signature         String?
   registrationStatus String  @default("full")
   enrolledAt        DateTime  @default(now())
+  whatsappConsent   Boolean   @default(true)
   payments          Payment[]
   packages          TreatmentPackage[]
   appointments      Appointment[]
+  notifications     Notification[]
 
   @@map("patients")
 }
@@ -225,6 +227,31 @@ model PageView {
   @@index([timestamp])
   @@index([visitorId, timestamp])
   @@map("page_views")
+}
+
+model Notification {
+  id              String    @id @default(cuid())
+  patientId       String
+  patient         Patient   @relation(fields: [patientId], references: [id])
+  type            String    // welcome, milestone, completion, reminder, no-show, re-engagement
+  channel         String    @default("whatsapp")
+  toNumber        String
+  messageContent  String
+  templateName    String?
+  status          String    @default("pending") // pending, sent, delivered, failed
+  twilioSid       String?
+  errorMessage    String?
+  metadata        Json?
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notifications")
 }
 
 model DailyStats {
