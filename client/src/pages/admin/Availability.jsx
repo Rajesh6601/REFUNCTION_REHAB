@@ -159,12 +159,16 @@ export default function AdminAvailability() {
               <div>
                 <label className="text-xs font-medium text-muted">Slot Duration (min)</label>
                 <input type="number" className="input-field text-sm py-2 mt-1" value={form.slotDuration}
-                  onChange={(e) => setForm({ ...form, slotDuration: parseInt(e.target.value) || 45 })} min={10} max={120} />
+                  onChange={(e) => setForm({ ...form, slotDuration: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                  onBlur={() => setForm(f => ({ ...f, slotDuration: parseInt(f.slotDuration) || 45 }))}
+                  min={10} max={120} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted">Max Patients/Slot</label>
                 <input type="number" className="input-field text-sm py-2 mt-1" value={form.maxPatients}
-                  onChange={(e) => setForm({ ...form, maxPatients: parseInt(e.target.value) || 1 })} min={1} max={20} />
+                  onChange={(e) => setForm({ ...form, maxPatients: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                  onBlur={() => setForm(f => ({ ...f, maxPatients: parseInt(f.maxPatients) || 1 }))}
+                  min={1} max={20} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted">Session Type</label>
