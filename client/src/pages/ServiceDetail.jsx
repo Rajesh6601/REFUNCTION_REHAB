@@ -29,7 +29,7 @@ const serviceData = {
       'Fall prevention and balance confidence programs',
       'Home exercise plans for continued progress',
     ],
-    sessionInfo: { duration: '45–60 min', frequency: '3–5 sessions/week', mode: 'In-clinic & Home visits' },
+    sessionInfo: { duration: '45–60 min', frequency: '3–5 sessions/week', mode: 'In-clinic & Online' },
   },
   'womens-health': {
     title: "Women's Health & Postnatal",
@@ -53,7 +53,7 @@ const serviceData = {
       'Pelvic floor recovery and core rebuilding',
       'Small group batches for personalized attention',
     ],
-    sessionInfo: { duration: '60 min', frequency: '3 sessions/week', mode: 'In-clinic (7PM–8PM batch)' },
+    sessionInfo: { duration: '60 min', frequency: '3 sessions/week', mode: 'In-clinic & Online (7PM–8PM batch)' },
     batch: true,
   },
   'pain-management': {
@@ -78,7 +78,7 @@ const serviceData = {
       'Posture correction and ergonomic guidance',
       'Long-term pain prevention strategies',
     ],
-    sessionInfo: { duration: '45–60 min', frequency: '3–5 sessions/week', mode: 'In-clinic' },
+    sessionInfo: { duration: '45–60 min', frequency: '3–5 sessions/week', mode: 'In-clinic & Online' },
   },
   'sports-rehab': {
     title: 'Sports Injury Rehab',
@@ -102,7 +102,7 @@ const serviceData = {
       'Progressive loading with objective benchmarks',
       'Pre-surgery prehab for better outcomes',
     ],
-    sessionInfo: { duration: '45–60 min', frequency: '4–6 sessions/week', mode: 'In-clinic' },
+    sessionInfo: { duration: '45–60 min', frequency: '4–6 sessions/week', mode: 'In-clinic & Online' },
   },
   'post-surgery': {
     title: 'Post-Surgery Rehab',
@@ -126,7 +126,7 @@ const serviceData = {
       'Pain management and scar tissue mobilization',
       'Home exercise programs for continued recovery',
     ],
-    sessionInfo: { duration: '45–60 min', frequency: '4–6 sessions/week', mode: 'In-clinic' },
+    sessionInfo: { duration: '45–60 min', frequency: '4–6 sessions/week', mode: 'In-clinic & Online' },
   },
   kids: {
     title: 'Kids Exercise Program',
@@ -150,7 +150,7 @@ const serviceData = {
       'Supervised by qualified physiotherapists',
       'Regular progress reports shared with parents',
     ],
-    sessionInfo: { duration: '60 min', frequency: '3 sessions/week', mode: 'In-clinic (SDA location)' },
+    sessionInfo: { duration: '60 min', frequency: '3 sessions/week', mode: 'In-clinic & Online (SDA location)' },
   },
 }
 

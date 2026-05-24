@@ -729,7 +729,7 @@ model Testimonial {
 - **Manages**: Neck & Joint Pain, Shoulder Pain, Arthritis, Osteoporosis & Low Bone Density
 - **Journey**: Initial Assessment → Neck Stretches → Shoulder Mobility → Knee Strengthening → Balance Training
 - **Highlights**: Gentle age-tailored exercises, continuous vitals monitoring, fall prevention programs, home exercise plans
-- **Session Info**: 45–60 min, 3–5 sessions/week, In-clinic & Home visits
+- **Session Info**: 45–60 min, 3–5 sessions/week, In-clinic & Online
 
 ### Women's Health & Postnatal (`/services/womens-health`)
 - **Tagline**: Heal. Strengthen. Feel confident in your body again.
@@ -737,7 +737,7 @@ model Testimonial {
 - **Target**: Diastasis Recti, Pelvic Floor Weakness, Back Pain During Pregnancy, Postnatal Recovery, Incontinence
 - **Journey**: Core & Pelvic Assessment → Breathing Techniques → Core Activation → Progressive Loading → Full Functional Training
 - **Highlights**: Certified prenatal & postnatal Pilates, safe trimester-specific exercises, pelvic floor recovery, small group batches
-- **Session Info**: 60 min, 3 sessions/week, In-clinic (7PM–8PM batch)
+- **Session Info**: 60 min, 3 sessions/week, In-clinic & Online (7PM–8PM batch)
 - **Batch**: 7PM–8PM | Limited spots
 
 ### Back, Neck & Shoulder Pain (`/services/pain-management`)
@@ -746,7 +746,7 @@ model Testimonial {
 - **Conditions**: Chronic Back Pain, Cervical Spondylosis, Shoulder Impingement, SI Joint Pain, Disc Herniation, Postural Dysfunction
 - **Journey**: Specialized Assessment → Pain Education → Manual Therapy → Exercise Prescription → Functional Return
 - **Highlights**: Root-cause analysis, hands-on manual therapy + exercise, posture correction and ergonomic guidance, long-term prevention strategies
-- **Session Info**: 45–60 min, 3–5 sessions/week, In-clinic
+- **Session Info**: 45–60 min, 3–5 sessions/week, In-clinic & Online
 
 ### Sports Injury Rehab (`/services/sports-rehab`)
 - **Tagline**: Back to the Game, Stronger Than Before.
@@ -755,7 +755,7 @@ model Testimonial {
 - **Approach**: Evidence-based progressive rehab, sport-specific return-to-play protocols
 - **Journey**: Injury Assessment → Acute Phase → Strength & Stability → Functional Training → Return to Play/Activity
 - **Highlights**: Surgeon-coordinated rehab protocols, sport-specific return-to-play programs, progressive loading with objective benchmarks, pre-surgery prehab
-- **Session Info**: 45–60 min, 4–6 sessions/week, In-clinic
+- **Session Info**: 45–60 min, 4–6 sessions/week, In-clinic & Online
 
 ### Post-Surgery Rehab (`/services/post-surgery`)
 - **Tagline**: Structured Recovery, Optimal Outcomes.
@@ -764,7 +764,7 @@ model Testimonial {
 - **Approach**: Comprehensive post-operative rehabilitation, surgeon-coordinated protocols
 - **Journey**: Post-Op Assessment → Early Mobilization → Strengthening Phase → Functional Restoration → Full Recovery
 - **Highlights**: Surgeon-coordinated protocols, phase-wise progression based on healing timelines, pain management and scar tissue mobilization, home exercise programs
-- **Session Info**: 45–60 min, 4–6 sessions/week, In-clinic
+- **Session Info**: 45–60 min, 4–6 sessions/week, In-clinic & Online
 
 ### Kids Exercise Program (`/services/kids`)
 - **Tagline**: Fun, Safe & Developmentally Appropriate.
@@ -772,7 +772,7 @@ model Testimonial {
 - **Conditions**: Posture Correction, Flat Feet, Core Strengthening, Coordination & Balance, Sports Conditioning, Weight Management
 - **Journey**: Child Assessment → Fun Movement Games → Core & Postural Work → Sport Skills → Progress Review
 - **Highlights**: Fun game-based exercises, small groups (max 8–10 kids), supervised by qualified physiotherapists, regular progress reports for parents
-- **Session Info**: 60 min, 3 sessions/week, In-clinic (SDA location)
+- **Session Info**: 60 min, 3 sessions/week, In-clinic & Online (SDA location)
 
 ---
 
